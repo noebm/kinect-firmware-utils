@@ -53,13 +53,9 @@ fn command(device: &rusb::DeviceHandle<rusb::GlobalContext>, cmd: &[u32]) {
 }
 
 fn main() {
-    let args: Vec<_> = std::env::args().collect();
-
-    let filename = if args.len() == 2 {
-        &args[1]
-    } else {
-        "firmware.bin"
-    };
+    let filename = std::env::args()
+        .nth(1)
+        .unwrap_or("firmware.bin".to_string());
 
     let device = {
         let mut device =
