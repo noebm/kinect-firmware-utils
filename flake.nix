@@ -1,8 +1,8 @@
 {
   inputs = {
-    naersk.url = "github:nix-community/naersk/master";
-    naersk.inputs.nixpkgs.follows = "nixpkgs";
-    nixpkgs.url = "github:NixOS/nixpkgs/release-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    crane.url = "github:ipetkov/crane";
+    crane.inputs.nixpkgs.follows = "nixpkgs";
     utils.url = "github:numtide/flake-utils";
   };
 
@@ -10,11 +10,11 @@
     self,
     nixpkgs,
     utils,
-    naersk,
+    crane,
   }:
     utils.lib.eachDefaultSystem (system: let
-      pkgs = import nixpkgs {inherit system;};
-      naersk-lib = pkgs.callPackage naersk {};
+      pkgs = nixpkgs.legacyPackages.${system};
+      crane-lib = crane.lib.${system};
     in {
       devShells.default = with pkgs;
         mkShell {
@@ -24,7 +24,9 @@
 
       packages = rec {
         default = kinect-firmware-utils;
-        kinect-firmware-utils = naersk-lib.buildPackage ./.;
+        kinect-firmware-utils = crane-lib.buildPackage {
+          src = crane-lib.cleanCargoSource (crane-lib.path ./.);
+        };
 
         kinect-firmware-blob = with pkgs;
           stdenv.mkDerivation rec {
