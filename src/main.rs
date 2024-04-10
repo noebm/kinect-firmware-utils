@@ -85,7 +85,7 @@ fn main() {
         0x06022009u32, // magic
         seq,           // tag
         0x00000060u32, // payload size
-        0x00000000u32, // command = status
+        0x00000000u32, // command = version
         0x00000015u32, // address
         0x00000000u32, // unk
     ];
@@ -111,7 +111,7 @@ fn main() {
             0x06022009u32,       // magic
             seq,                 // tag
             (page.len() as u32), // payload size
-            0x00000003u32,       // command = status
+            0x00000003u32,       // command = write page
             address,             // address
             0x00000000u32,       // unk
         ];
@@ -140,7 +140,7 @@ fn main() {
         0x0602_2009u32, // magic
         seq,            // tag
         0x0000_0000u32, // payload size
-        0x0000_0004u32, // command = status
+        0x0000_0004u32, // command = finish upload
         0x0008_0030u32, // address
         0x0000_0000u32, // unk
     ];
