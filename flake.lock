@@ -58,7 +58,8 @@
       "inputs": {
         "crane": "crane",
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "wix-extract": "wix-extract"
       }
     },
     "systems": {
@@ -73,6 +74,29 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "wix-extract": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1713366621,
+        "narHash": "sha256-ZyZrZ5ro8q6ajsABBK+6cfcPqSEQte3gYx06CqYVxtw=",
+        "owner": "noebm",
+        "repo": "wix-extract",
+        "rev": "072e391e46842efbbc57c6b6e1b6fe5c452dc4d8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "noebm",
+        "repo": "wix-extract",
         "type": "github"
       }
     }
