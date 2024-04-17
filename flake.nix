@@ -32,7 +32,7 @@
           src = crane-lib.cleanCargoSource (crane-lib.path ./.);
         };
 
-        kinect-firmware-blob = kinect-firmware-blob_1_0_beta2;
+        kinect-firmware-blob = kinect-firmware-blob_1_8;
 
         kinect-firmware-blob_1_8 = with pkgs;
           stdenv.mkDerivation {
@@ -51,7 +51,7 @@
             '';
 
             installPhase = ''
-            cp UACFirmware $out
+              cp UACFirmware $out
             '';
           };
 
