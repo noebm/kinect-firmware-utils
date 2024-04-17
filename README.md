@@ -1,3 +1,7 @@
+# kinect-firmware-utils
+
+Implementation based on [kinect-audio-setup](https://git.ao2.it/kinect-audio-setup.git/) and [libfreenect](https://github.com/OpenKinect/libfreenect).
+
 # Notes
 
 ## Firmware versions
@@ -18,4 +22,3 @@
 ## Usb protocol
 
 Apparently the [usb protocol](https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/src/usbcommand/usbcommand.c#L598) for Azure Kinect Sensor is mostly the same.
-
