@@ -1,3 +1,6 @@
+mod header;
+use header::Header;
+
 const VENDOR_MICROSOFT: u16 = 0x045e;
 const PRODUCT_K4W_AUDIO_ORIGINAL: u16 = 0x02be;
 const KINECT_AUDIO_CONFIGURATION: u8 = 1;
@@ -79,6 +82,11 @@ fn main() {
         .unwrap_or("firmware.bin".to_string());
 
     let firmware: Vec<u8> = std::fs::read(filename).expect("Failed to open file");
+    let firmware_header = Header::from_slice(&firmware).expect("Could not parse firmware header");
+
+    println!("FIRMWARE HEADER {}", firmware_header);
+    assert_eq!(firmware_header.size, firmware.len() as u32);
+
     let device = setup_device().unwrap();
 
     let mut seq = 1u32;
@@ -102,7 +110,7 @@ fn main() {
 
     const PAGESIZE: usize = 0x4000;
     let pages = firmware.chunks(PAGESIZE);
-    let addresses = (0x0008_0000u32..).step_by(PAGESIZE);
+    let addresses = (firmware_header.base_address..).step_by(PAGESIZE);
 
     for (address, page) in addresses.zip(pages) {
         seq += 1;
@@ -138,12 +146,12 @@ fn main() {
     seq += 1;
 
     let finished_cmd = &[
-        0x0602_2009u32, // magic
-        seq,            // tag
-        0x0000_0000u32, // payload size
-        0x0000_0004u32, // command = finish upload
-        0x0008_0030u32, // address
-        0x0000_0000u32, // unk
+        0x0602_2009u32,              // magic
+        seq,                         // tag
+        0x0000_0000u32,              // payload size
+        0x0000_0004u32,              // command = finish upload
+        firmware_header.entry_point, // address
+        0x0000_0000u32,              // unk
     ];
 
     // write command
