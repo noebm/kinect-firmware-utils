@@ -28,9 +28,12 @@
           src = crane-lib.cleanCargoSource (crane-lib.path ./.);
         };
 
-        kinect-firmware-blob = with pkgs;
+        kinect-firmware-blob = kinect-firmware-blob_1_0_beta2;
+
+        kinect-firmware-blob_1_0_beta2 = with pkgs;
           stdenv.mkDerivation rec {
-            name = "kinect-firmware-blob";
+            pname = "kinect-firmware-blob";
+            version = "1.0-beta2";
 
             src = fetchurl {
               url = "http://download.microsoft.com/download/F/9/9/F99791F2-D5BE-478A-B77A-830AD14950C3/KinectSDK-v1.0-beta2-x86.msi";
