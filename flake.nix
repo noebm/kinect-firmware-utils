@@ -34,6 +34,27 @@
 
         kinect-firmware-blob = kinect-firmware-blob_1_0_beta2;
 
+        kinect-firmware-blob_1_8 = with pkgs;
+          stdenv.mkDerivation {
+            pname = "kinect-firmware-blob";
+            version = "1.8";
+
+            src = fetchurl {
+              url = "https://download.microsoft.com/download/E/1/D/E1DEC243-0389-4A23-87BF-F47DE869FC1A/KinectSDK-v1.8-Setup.exe";
+              hash = "sha256-BXRlHVV269MyMH31fESSL4XFaUFs0NdbWdH5m76NG1M=";
+            };
+            buildInputs = [wix-extract.packages.${system}.default p7zip];
+
+            unpackPhase = ''
+              wix-extract $src -d $TMP
+              7z e -y -r $TMP/KinectDrivers-v1.8-x86.WHQL.msi "UACFirmware" > /dev/null
+            '';
+
+            installPhase = ''
+            cp UACFirmware $out
+            '';
+          };
+
         kinect-firmware-blob_1_0_beta2 = with pkgs;
           stdenv.mkDerivation rec {
             pname = "kinect-firmware-blob";
