@@ -3,16 +3,16 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     crane.url = "github:ipetkov/crane";
     crane.inputs.nixpkgs.follows = "nixpkgs";
-    utils.url = "github:numtide/flake-utils";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = {
     self,
     nixpkgs,
-    utils,
+    flake-utils,
     crane,
   }:
-    utils.lib.eachDefaultSystem (system: let
+    flake-utils.lib.eachDefaultSystem (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       crane-lib = crane.lib.${system};
     in {
@@ -67,7 +67,7 @@
           };
       };
       apps = rec {
-        kinect-firmware-utils = utils.lib.mkApp {
+        kinect-firmware-utils = flake-utils.lib.mkApp {
           drv = self.packages.${system}.kinect-firmware-utils;
         };
         default = kinect-firmware-utils;
