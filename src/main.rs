@@ -61,16 +61,15 @@ fn main() {
         command(&device, page_cmd);
 
         // write data
-        for packet in page.chunks(512) {
+        for packet in packets(page) {
             println!(
                 "SEQ {} - ADDRESS {:x} - PACKET {}",
                 seq,
                 address,
                 packet.len()
             );
-            device
-                .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, packet, TIMEOUT)
-                .unwrap();
+
+            send(&device, packet);
         }
 
         // read status
