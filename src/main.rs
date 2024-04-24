@@ -1,6 +1,7 @@
 mod header;
 mod protocol;
 use header::Header;
+use protocol::external as p;
 use protocol::*;
 
 fn setup_device() -> Option<rusb::DeviceHandle<rusb::GlobalContext>> {
@@ -60,27 +61,7 @@ fn main() {
 
     for (address, page) in addresses.zip(pages) {
         seq += 1;
-
-        // write command
-        let page_cmd = &command::page(seq, address, page.len() as u32);
-        send_command(&device, page_cmd);
-
-        // write data
-        for packet in packets(page) {
-            println!(
-                "SEQ {} - ADDRESS {:x} - PACKET {}",
-                seq,
-                address,
-                packet.len()
-            );
-
-            send(&device, packet);
-        }
-
-        // read status
-        let status = receive_status(&device);
-        assert_eq!(status.tag, seq);
-        assert!(status.success);
+        p::send(&device, p::CMD::PAGE, seq, address, page);
     }
 
     seq += 1;

@@ -249,20 +249,25 @@ pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Respo
     Some(packet)
 }
 
-pub mod protocol {
+pub mod external {
     mod internal {
         pub use super::super::*;
     }
 
+    #[repr(u32)]
+    pub enum CMD {
+        PAGE = 3,
+    }
+
     pub fn send(
         device: &rusb::DeviceHandle<rusb::GlobalContext>,
-        command: u32,
+        command: CMD,
         tag: u32,
         address: u32,
         data: &[u8],
     ) {
         let cmd = internal::Command {
-            command,
+            command: command as u32,
             tag,
             address,
             size: data.len() as u32,
@@ -271,6 +276,12 @@ pub mod protocol {
 
         internal::send_command(device, &cmd);
         for packet in internal::packets(data) {
+            println!(
+                "TAG {} - ADDRESS {:x} - PACKET {}",
+                tag,
+                address,
+                packet.len()
+            );
             internal::send(device, packet);
         }
         let result = internal::receive_status(device);
