@@ -248,3 +248,33 @@ pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Respo
     packet.len = len;
     Some(packet)
 }
+
+pub mod protocol {
+    mod internal {
+        pub use super::super::*;
+    }
+
+    pub fn send(
+        device: &rusb::DeviceHandle<rusb::GlobalContext>,
+        command: u32,
+        tag: u32,
+        address: u32,
+        data: &[u8],
+    ) {
+        let cmd = internal::Command {
+            command,
+            tag,
+            address,
+            size: data.len() as u32,
+            unk: 0,
+        };
+
+        internal::send_command(device, &cmd);
+        for packet in internal::packets(data) {
+            internal::send(device, packet);
+        }
+        let result = internal::receive_status(device);
+        assert_eq!(result.tag, tag);
+        assert!(result.success)
+    }
+}
