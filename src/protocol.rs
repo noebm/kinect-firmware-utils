@@ -208,7 +208,7 @@ impl<'a> std::iter::Iterator for Packets<'a> {
 }
 
 /// Data packet for receiving data
-struct Response {
+pub struct Response {
     data: [u8; 512],
     len: usize,
 }
@@ -223,12 +223,12 @@ impl Response {
 
     // fn new([u8; 512])
 
-    fn get(&self) -> &[u8] {
+    pub fn get(&self) -> &[u8] {
         &self.data[..self.len]
     }
 }
 
-fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Response> {
+pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Response> {
     let mut packet = Response::empty();
 
     let len = device
@@ -241,14 +241,4 @@ fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Response>
 
     packet.len = len;
     Some(packet)
-}
-
-pub fn response(device: &rusb::DeviceHandle<rusb::GlobalContext>) {
-    let response = receive(device).unwrap();
-
-    let len = response.get().len();
-    println!("RESPONSE LEN {:#x}", len);
-
-    // for status command
-    assert_eq!(len, 0x60);
 }

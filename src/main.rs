@@ -43,8 +43,11 @@ fn main() {
     let status_cmd = &command::status(seq);
     send_command(&device, status_cmd);
 
-    // read response
-    response(&device);
+    // read status response
+    let response = receive(&device).unwrap();
+    let len = response.get().len();
+    println!("RESPONSE LEN {:#x}", len);
+    assert_eq!(len, 0x60);
 
     // read status
     assert!(receive_status(&device, seq));
