@@ -221,8 +221,6 @@ impl Response {
         }
     }
 
-    // fn new([u8; 512])
-
     pub fn get(&self) -> &[u8] {
         &self.data[..self.len]
     }
