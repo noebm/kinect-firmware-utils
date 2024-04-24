@@ -21,7 +21,7 @@ mod internal {
 
         device
             .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, &cmd_buffer, TIMEOUT)
-            .map_err(|e| Error::USB(e))?;
+            .map_err(Error::USB)?;
         Ok(())
     }
 
@@ -212,7 +212,7 @@ mod internal {
 
         let len = device
             .read_bulk(KINECT_AUDIO_ENDPOINT_IN, &mut packet.data, TIMEOUT)
-            .map_err(|e| Error::USB(e))?;
+            .map_err(Error::USB)?;
 
         if len > packet.data.len() {
             return Err(Error::Payload);
