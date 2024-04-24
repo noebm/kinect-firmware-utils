@@ -251,15 +251,15 @@ pub enum Error {
 }
 
 #[repr(u32)]
-pub enum CMD {
-    STATUS = 0,
-    PAGE = 3,
-    EXECUTE = 4,
+pub enum Command {
+    Status = 0,
+    Page = 3,
+    Execute = 4,
 }
 
 pub fn send(
     device: &rusb::DeviceHandle<rusb::GlobalContext>,
-    command: CMD,
+    command: Command,
     tag: u32,
     address: u32,
     data: &[u8],
@@ -297,7 +297,7 @@ pub fn send(
 
 pub fn receive(
     device: &rusb::DeviceHandle<rusb::GlobalContext>,
-    command: CMD,
+    command: Command,
     tag: u32,
     address: u32,
     size: u32,

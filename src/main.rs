@@ -39,7 +39,7 @@ fn main() -> Result<(), Error> {
 
     let mut seq = 1u32;
 
-    let _firmware_status = receive(&device, CMD::STATUS, seq, 0x15, 0x60)?;
+    let _firmware_status = receive(&device, Command::Status, seq, 0x15, 0x60)?;
 
     const PAGESIZE: usize = 0x4000;
     let pages = firmware.chunks(PAGESIZE);
@@ -47,10 +47,10 @@ fn main() -> Result<(), Error> {
 
     for (address, page) in addresses.zip(pages) {
         seq += 1;
-        send(&device, CMD::PAGE, seq, address, page)?;
+        send(&device, Command::Page, seq, address, page)?;
     }
 
     seq += 1;
 
-    send(&device, CMD::EXECUTE, seq, firmware_header.entry_point, &[])
+    send(&device, Command::Execute, seq, firmware_header.entry_point, &[])
 }
