@@ -172,6 +172,42 @@ mod tests {
     }
 }
 
+/// Data packet for sending data
+pub struct Packet<'a>(&'a [u8]);
+
+impl<'a> Packet<'a> {
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: Packet) {
+    device
+        .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, packet.0, TIMEOUT)
+        .unwrap();
+}
+
+pub struct Packets<'a>(core::slice::Chunks<'a, u8>);
+
+const PACKET_SIZE: usize = 512;
+
+impl<'a> From<&'a [u8]> for Packets<'a> {
+    fn from(value: &'a [u8]) -> Self {
+        Self(value.chunks(PACKET_SIZE))
+    }
+}
+
+pub fn packets<'a>(data: &'a [u8]) -> Packets<'a> {
+    data.into()
+}
+
+impl<'a> std::iter::Iterator for Packets<'a> {
+    type Item = Packet<'a>;
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(Packet(self.0.next()?))
+    }
+}
+
 /// Data packet for receiving data
 struct Response {
     data: [u8; 512],
