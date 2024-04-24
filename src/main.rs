@@ -66,13 +66,11 @@ fn main() {
 
     seq += 1;
 
-    let finished_cmd = &command::finished(seq, firmware_header.entry_point);
-
-    // write command
-    send_command(&device, finished_cmd);
-
-    // read status
-    let status = receive_status(&device);
-    assert_eq!(status.tag, seq);
-    assert!(status.success);
+    p::send(
+        &device,
+        p::CMD::EXECUTE,
+        seq,
+        firmware_header.entry_point,
+        &[],
+    )
 }

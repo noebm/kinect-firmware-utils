@@ -257,6 +257,7 @@ pub mod external {
     #[repr(u32)]
     pub enum CMD {
         PAGE = 3,
+        EXECUTE = 4,
     }
 
     pub fn send(
