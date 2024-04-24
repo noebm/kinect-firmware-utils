@@ -44,50 +44,19 @@ mod internal {
     }
 
     pub mod command {
-        use super::Command;
-
-        #[cfg(test)]
-        fn le_bytes(cmd: &[u32; 6]) -> Vec<u8> {
-            let cmd_buffer = cmd
-                .iter()
-                .map(|arg| arg.to_le_bytes())
-                .collect::<Vec<[u8; 4]>>()
-                .concat();
-            cmd_buffer
-        }
-
-        pub fn status(tag: u32) -> Command {
-            Command {
-                tag,
-                command: 0,
-                address: 0x15,
-                size: 0x60,
-                unk: 0,
-            }
-        }
-
-        pub fn page(tag: u32, address: u32, size: u32) -> Command {
-            Command {
-                tag,
-                command: 3,
-                address,
-                size,
-                unk: 0,
-            }
-        }
-        pub fn finished(tag: u32, entry_point: u32) -> Command {
-            Command {
-                tag,
-                command: 0x04,
-                address: entry_point,
-                size: 0,
-                unk: 0,
-            }
-        }
 
         #[cfg(test)]
         mod tests {
-            use super::*;
+            use super::super::Command;
+
+            fn le_bytes(cmd: &[u32; 6]) -> Vec<u8> {
+                let cmd_buffer = cmd
+                    .iter()
+                    .map(|arg| arg.to_le_bytes())
+                    .collect::<Vec<[u8; 4]>>()
+                    .concat();
+                cmd_buffer
+            }
 
             #[test]
             fn generate_status_command() {
@@ -100,8 +69,15 @@ mod internal {
                     0x00000015u32, // address
                     0x00000000u32, // unk
                 ];
+                let status = Command {
+                    tag: seq,
+                    command: 0,
+                    address: 0x15,
+                    size: 0x60,
+                    unk: 0,
+                };
 
-                assert_eq!(le_bytes(&status_cmd), status(seq).bytes());
+                assert_eq!(le_bytes(&status_cmd), status.bytes());
             }
 
             #[test]
@@ -117,11 +93,15 @@ mod internal {
                     address,           // address
                     0x00000000u32,     // unk
                 ];
+                let page = Command {
+                    tag: seq,
+                    command: 3,
+                    address,
+                    size: page_len as u32,
+                    unk: 0,
+                };
 
-                assert_eq!(
-                    le_bytes(&page_cmd),
-                    page(seq, address, page_len as u32).bytes()
-                );
+                assert_eq!(le_bytes(&page_cmd), page.bytes());
             }
 
             #[test]
@@ -136,8 +116,15 @@ mod internal {
                     entry_point,    // address
                     0x0000_0000u32, // unk
                 ];
+                let finished = Command {
+                    tag: seq,
+                    command: 0x04,
+                    address: entry_point,
+                    size: 0,
+                    unk: 0,
+                };
 
-                assert_eq!(le_bytes(&finished_cmd), finished(seq, entry_point).bytes());
+                assert_eq!(le_bytes(&finished_cmd), finished.bytes());
             }
         }
     }
@@ -155,7 +142,7 @@ mod internal {
             if value.get().len() != 12 {
                 return Err(());
             }
-            Self::read(&mut std::io::Cursor::new(value.get())).map_err(|e| ())
+            Self::read(&mut std::io::Cursor::new(value.get())).map_err(|_| ())
         }
     }
 
