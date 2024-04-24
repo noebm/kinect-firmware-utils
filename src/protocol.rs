@@ -254,8 +254,11 @@ pub mod external {
         pub use super::super::*;
     }
 
+    pub use internal::Response;
+
     #[repr(u32)]
     pub enum CMD {
+        STATUS = 0,
         PAGE = 3,
         EXECUTE = 4,
     }
@@ -288,5 +291,31 @@ pub mod external {
         let result = internal::receive_status(device);
         assert_eq!(result.tag, tag);
         assert!(result.success)
+    }
+
+    pub fn receive(
+        device: &rusb::DeviceHandle<rusb::GlobalContext>,
+        command: CMD,
+        tag: u32,
+        address: u32,
+        size: u32,
+    ) -> Response {
+        let cmd = internal::Command {
+            command: command as u32,
+            tag,
+            address,
+            size,
+            unk: 0,
+        };
+
+        internal::send_command(device, &cmd);
+        let response = internal::receive(device).unwrap();
+        assert_eq!(response.get().len(), size as usize);
+
+        let result = internal::receive_status(device);
+        assert_eq!(result.tag, tag);
+        assert!(result.success);
+
+        response
     }
 }

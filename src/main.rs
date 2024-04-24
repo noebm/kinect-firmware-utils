@@ -40,20 +40,7 @@ fn main() {
 
     let mut seq = 1u32;
 
-    // write command
-    let status_cmd = &command::status(seq);
-    send_command(&device, status_cmd);
-
-    // read status response
-    let response = receive(&device).unwrap();
-    let len = response.get().len();
-    println!("RESPONSE LEN {:#x}", len);
-    assert_eq!(len, 0x60);
-
-    // read status
-    let status = receive_status(&device);
-    assert_eq!(status.tag, seq);
-    assert!(status.success);
+    let response = p::receive(&device, p::CMD::STATUS, seq, 0x15, 0x60);
 
     const PAGESIZE: usize = 0x4000;
     let pages = firmware.chunks(PAGESIZE);
