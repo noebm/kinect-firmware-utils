@@ -177,6 +177,42 @@ mod tests {
     }
 }
 
+/// Data packet for upload and download
+struct Packet {
+    data: [u8; 512],
+    len: usize,
+}
+
+impl Packet {
+    fn empty() -> Self {
+        Self {
+            data: [0u8; 512],
+            len: 0,
+        }
+    }
+
+    // fn new([u8; 512])
+
+    fn get(&self) -> &[u8] {
+        &self.data[..self.len]
+    }
+}
+
+fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Packet> {
+    let mut packet = Packet::empty();
+
+    let len = device
+        .read_bulk(KINECT_AUDIO_ENDPOINT_IN, &mut packet.data, TIMEOUT)
+        .unwrap();
+
+    if len > packet.data.len() {
+        return None;
+    }
+
+    packet.len = len;
+    Some(packet)
+}
+
 pub fn response(device: &rusb::DeviceHandle<rusb::GlobalContext>) {
     let mut buffer = [0u8; 512];
 
