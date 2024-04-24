@@ -1,4 +1,4 @@
-use binrw::BinRead;
+use binrw::{BinRead, BinWrite};
 
 pub const VENDOR_MICROSOFT: u16 = 0x045e;
 pub const PRODUCT_K4W_AUDIO_ORIGINAL: u16 = 0x02be;
@@ -8,33 +8,35 @@ pub const KINECT_AUDIO_ENDPOINT_IN: u8 = 0x81;
 pub const KINECT_AUDIO_ENDPOINT_OUT: u8 = 0x01;
 pub const TIMEOUT: std::time::Duration = std::time::Duration::ZERO;
 
-pub fn command(device: &rusb::DeviceHandle<rusb::GlobalContext>, cmd: &command::Command) {
+pub fn command(device: &rusb::DeviceHandle<rusb::GlobalContext>, cmd: &Command) {
     println!("COMMAND STATUS {:08x?}", cmd);
-    let cmd_buffer = command::serialize(cmd);
+    let cmd_buffer = cmd.bytes();
 
     device
         .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, &cmd_buffer, TIMEOUT)
         .unwrap();
 }
 
-pub mod command {
-    use binrw::BinWrite;
+#[derive(Debug, BinWrite)]
+#[bw(little, magic = b"\x09\x20\x02\x06")]
+pub struct Command {
+    tag: u32,
+    size: u32,
+    command: u32,
+    address: u32,
+    unk: u32,
+}
 
-    #[derive(Debug, BinWrite)]
-    #[bw(little, magic = b"\x09\x20\x02\x06")]
-    pub struct Command {
-        tag: u32,
-        size: u32,
-        command: u32,
-        address: u32,
-        unk: u32,
-    }
-
-    pub fn serialize(cmd: &Command) -> Vec<u8> {
+impl Command {
+    fn bytes(&self) -> Vec<u8> {
         let mut writer = std::io::Cursor::new(Vec::with_capacity(6 * 4));
-        cmd.write(&mut writer).unwrap();
+        self.write(&mut writer).unwrap();
         writer.into_inner()
     }
+}
+
+pub mod command {
+    use super::Command;
 
     #[cfg(test)]
     fn le_bytes(cmd: &[u32; 6]) -> Vec<u8> {
@@ -91,7 +93,7 @@ pub mod command {
                 0x00000000u32, // unk
             ];
 
-            assert_eq!(le_bytes(&status_cmd), serialize(&status(seq)));
+            assert_eq!(le_bytes(&status_cmd), status(seq).bytes());
         }
 
         #[test]
@@ -110,7 +112,7 @@ pub mod command {
 
             assert_eq!(
                 le_bytes(&page_cmd),
-                serialize(&page(seq, address, page_len as u32))
+                page(seq, address, page_len as u32).bytes()
             );
         }
 
@@ -127,10 +129,7 @@ pub mod command {
                 0x0000_0000u32, // unk
             ];
 
-            assert_eq!(
-                le_bytes(&finished_cmd),
-                serialize(&finished(seq, entry_point))
-            );
+            assert_eq!(le_bytes(&finished_cmd), finished(seq, entry_point).bytes());
         }
     }
 }
