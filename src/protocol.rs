@@ -134,30 +134,33 @@ pub mod command {
     }
 }
 
-pub fn receive_status(device: &rusb::DeviceHandle<rusb::GlobalContext>, seq: u32) -> bool {
+pub fn receive_status(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Status {
     let response = receive(device).unwrap();
-    get_status(response.get(), seq)
+    response.try_into().unwrap()
 }
 
-fn get_status(buffer: &[u8], tag: u32) -> bool {
-    assert_eq!(buffer.len(), 12);
-    let status = Status::read(&mut std::io::Cursor::new(buffer)).unwrap();
-    assert_eq!(status.tag, tag);
-    status.success
+impl TryFrom<Response> for Status {
+    type Error = ();
+    fn try_from(value: Response) -> Result<Self, Self::Error> {
+        if value.get().len() != 12 {
+            return Err(());
+        }
+        Self::read(&mut std::io::Cursor::new(value.get())).map_err(|e| ())
+    }
 }
 
 #[derive(BinRead)]
 #[br(little, magic = b"\x00\xe0\x6f\x0a")]
-struct Status {
-    tag: u32,
+pub struct Status {
+    pub tag: u32,
 
     #[br(map = |x: u32| x == 0)]
-    success: bool,
+    pub success: bool,
 }
 
 #[cfg(test)]
 mod tests {
-    use super::get_status;
+    use super::{Response, Status};
 
     #[test]
     fn parse_status() {
@@ -167,7 +170,12 @@ mod tests {
             .collect::<Vec<[u8; 4]>>()
             .concat();
 
-        assert!(get_status(&buffer, 1));
+        let mut response = Response::empty();
+        response.data.copy_from_slice(&buffer);
+
+        let status: Status = response.try_into().unwrap();
+        assert_eq!(status.tag, 1);
+        assert!(status.success);
     }
 }
 

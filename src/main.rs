@@ -50,7 +50,9 @@ fn main() {
     assert_eq!(len, 0x60);
 
     // read status
-    assert!(receive_status(&device, seq));
+    let status = receive_status(&device);
+    assert_eq!(status.tag, seq);
+    assert!(status.success);
 
     const PAGESIZE: usize = 0x4000;
     let pages = firmware.chunks(PAGESIZE);
@@ -76,7 +78,9 @@ fn main() {
         }
 
         // read status
-        assert!(receive_status(&device, seq));
+        let status = receive_status(&device);
+        assert_eq!(status.tag, seq);
+        assert!(status.success);
     }
 
     seq += 1;
@@ -87,5 +91,7 @@ fn main() {
     send_command(&device, finished_cmd);
 
     // read status
-    assert!(receive_status(&device, seq));
+    let status = receive_status(&device);
+    assert_eq!(status.tag, seq);
+    assert!(status.success);
 }
