@@ -8,13 +8,17 @@ pub const KINECT_AUDIO_ENDPOINT_IN: u8 = 0x81;
 pub const KINECT_AUDIO_ENDPOINT_OUT: u8 = 0x01;
 pub const TIMEOUT: std::time::Duration = std::time::Duration::ZERO;
 
-pub fn send_command(device: &rusb::DeviceHandle<rusb::GlobalContext>, cmd: &Command) {
+pub fn send_command(
+    device: &rusb::DeviceHandle<rusb::GlobalContext>,
+    cmd: &Command,
+) -> Result<(), Error> {
     println!("COMMAND STATUS {:08x?}", cmd);
     let cmd_buffer = cmd.bytes();
 
     device
         .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, &cmd_buffer, TIMEOUT)
-        .unwrap();
+        .map_err(|e| Error::USB(e))?;
+    Ok(())
 }
 
 #[derive(Debug, BinWrite)]
@@ -134,9 +138,9 @@ pub mod command {
     }
 }
 
-pub fn receive_status(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Status {
-    let response = receive(device).unwrap();
-    response.try_into().unwrap()
+pub fn receive_status(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Status, Error> {
+    let response = receive(device)?;
+    response.try_into().map_err(|_| Error::Result)
 }
 
 impl TryFrom<Response> for Status {
@@ -234,19 +238,27 @@ impl Response {
     }
 }
 
-pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Response> {
+pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Response, Error> {
     let mut packet = Response::empty();
 
     let len = device
         .read_bulk(KINECT_AUDIO_ENDPOINT_IN, &mut packet.data, TIMEOUT)
-        .unwrap();
+        .map_err(|e| Error::USB(e))?;
 
     if len > packet.data.len() {
-        return None;
+        return Err(Error::Payload);
     }
 
     packet.len = len;
-    Some(packet)
+    Ok(packet)
+}
+
+#[derive(Debug)]
+pub enum Error {
+    USB(rusb::Error),
+    Payload,
+    Tag,
+    Result,
 }
 
 pub mod external {
@@ -254,6 +266,7 @@ pub mod external {
         pub use super::super::*;
     }
 
+    pub use internal::Error;
     pub use internal::Response;
 
     #[repr(u32)]
@@ -269,7 +282,7 @@ pub mod external {
         tag: u32,
         address: u32,
         data: &[u8],
-    ) {
+    ) -> Result<(), Error> {
         let cmd = internal::Command {
             command: command as u32,
             tag,
@@ -278,7 +291,7 @@ pub mod external {
             unk: 0,
         };
 
-        internal::send_command(device, &cmd);
+        internal::send_command(device, &cmd)?;
         for packet in internal::packets(data) {
             println!(
                 "TAG {} - ADDRESS {:x} - PACKET {}",
@@ -288,9 +301,17 @@ pub mod external {
             );
             internal::send(device, packet);
         }
-        let result = internal::receive_status(device);
-        assert_eq!(result.tag, tag);
-        assert!(result.success)
+        let result = internal::receive_status(device)?;
+
+        if result.tag != tag {
+            return Err(Error::Tag);
+        }
+
+        if !result.success {
+            return Err(Error::Result);
+        }
+
+        Ok(())
     }
 
     pub fn receive(
@@ -299,7 +320,7 @@ pub mod external {
         tag: u32,
         address: u32,
         size: u32,
-    ) -> Response {
+    ) -> Result<Response, Error> {
         let cmd = internal::Command {
             command: command as u32,
             tag,
@@ -308,14 +329,22 @@ pub mod external {
             unk: 0,
         };
 
-        internal::send_command(device, &cmd);
-        let response = internal::receive(device).unwrap();
-        assert_eq!(response.get().len(), size as usize);
+        internal::send_command(device, &cmd)?;
+        let response = internal::receive(device)?;
+        let result = internal::receive_status(device)?;
 
-        let result = internal::receive_status(device);
-        assert_eq!(result.tag, tag);
-        assert!(result.success);
+        if response.get().len() != size as usize {
+            return Err(Error::Payload);
+        }
 
-        response
+        if result.tag != tag {
+            return Err(Error::Tag);
+        }
+
+        if !result.success {
+            return Err(Error::Result);
+        }
+
+        Ok(response)
     }
 }

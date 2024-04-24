@@ -25,7 +25,7 @@ fn setup_device() -> Option<rusb::DeviceHandle<rusb::GlobalContext>> {
     Some(device)
 }
 
-fn main() {
+fn main() -> Result<(), Error> {
     let filename = std::env::args()
         .nth(1)
         .unwrap_or("firmware.bin".to_string());
@@ -40,7 +40,7 @@ fn main() {
 
     let mut seq = 1u32;
 
-    let response = p::receive(&device, p::CMD::STATUS, seq, 0x15, 0x60);
+    let _firmware_status = p::receive(&device, p::CMD::STATUS, seq, 0x15, 0x60)?;
 
     const PAGESIZE: usize = 0x4000;
     let pages = firmware.chunks(PAGESIZE);
@@ -48,7 +48,7 @@ fn main() {
 
     for (address, page) in addresses.zip(pages) {
         seq += 1;
-        p::send(&device, p::CMD::PAGE, seq, address, page);
+        p::send(&device, p::CMD::PAGE, seq, address, page)?;
     }
 
     seq += 1;
