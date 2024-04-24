@@ -244,6 +244,7 @@ impl Response {
 
 #[derive(Debug)]
 pub enum Error {
+    #[allow(clippy::upper_case_acronyms)]
     USB(rusb::Error),
     Payload,
     Tag,
