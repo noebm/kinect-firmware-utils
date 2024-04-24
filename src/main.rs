@@ -41,13 +41,13 @@ fn main() {
 
     // write command
     let status_cmd = &command::status(seq);
-    command(&device, status_cmd);
+    send_command(&device, status_cmd);
 
     // read response
     response(&device);
 
     // read status
-    assert!(status(&device, seq));
+    assert!(receive_status(&device, seq));
 
     const PAGESIZE: usize = 0x4000;
     let pages = firmware.chunks(PAGESIZE);
@@ -58,7 +58,7 @@ fn main() {
 
         // write command
         let page_cmd = &command::page(seq, address, page.len() as u32);
-        command(&device, page_cmd);
+        send_command(&device, page_cmd);
 
         // write data
         for packet in packets(page) {
@@ -73,7 +73,7 @@ fn main() {
         }
 
         // read status
-        assert!(status(&device, seq));
+        assert!(receive_status(&device, seq));
     }
 
     seq += 1;
@@ -81,8 +81,8 @@ fn main() {
     let finished_cmd = &command::finished(seq, firmware_header.entry_point);
 
     // write command
-    command(&device, finished_cmd);
+    send_command(&device, finished_cmd);
 
     // read status
-    assert!(status(&device, seq));
+    assert!(receive_status(&device, seq));
 }

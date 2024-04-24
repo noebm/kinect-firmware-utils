@@ -8,7 +8,7 @@ pub const KINECT_AUDIO_ENDPOINT_IN: u8 = 0x81;
 pub const KINECT_AUDIO_ENDPOINT_OUT: u8 = 0x01;
 pub const TIMEOUT: std::time::Duration = std::time::Duration::ZERO;
 
-pub fn command(device: &rusb::DeviceHandle<rusb::GlobalContext>, cmd: &Command) {
+pub fn send_command(device: &rusb::DeviceHandle<rusb::GlobalContext>, cmd: &Command) {
     println!("COMMAND STATUS {:08x?}", cmd);
     let cmd_buffer = cmd.bytes();
 
@@ -134,7 +134,7 @@ pub mod command {
     }
 }
 
-pub fn status(device: &rusb::DeviceHandle<rusb::GlobalContext>, seq: u32) -> bool {
+pub fn receive_status(device: &rusb::DeviceHandle<rusb::GlobalContext>, seq: u32) -> bool {
     let response = receive(device).unwrap();
     get_status(response.get(), seq)
 }
