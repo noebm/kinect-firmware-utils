@@ -168,7 +168,8 @@ mod internal {
                 .concat();
 
             let mut response = Response::empty();
-            response.data.copy_from_slice(&buffer);
+            response.data[..buffer.len()].copy_from_slice(&buffer);
+            response.len = buffer.len();
 
             let status: Status = response.try_into().unwrap();
             assert_eq!(status.tag, 1);
