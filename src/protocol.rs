@@ -136,13 +136,8 @@ pub mod command {
 }
 
 pub fn status(device: &rusb::DeviceHandle<rusb::GlobalContext>, seq: u32) -> bool {
-    let mut status_buffer = [0u8; 512];
-
-    let status_len = device
-        .read_bulk(KINECT_AUDIO_ENDPOINT_IN, &mut status_buffer, TIMEOUT)
-        .unwrap();
-
-    get_status(&status_buffer[..status_len], seq)
+    let response = receive(device).unwrap();
+    get_status(response.get(), seq)
 }
 
 fn get_status(buffer: &[u8], tag: u32) -> bool {
@@ -214,12 +209,9 @@ fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Response>
 }
 
 pub fn response(device: &rusb::DeviceHandle<rusb::GlobalContext>) {
-    let mut buffer = [0u8; 512];
+    let response = receive(device).unwrap();
 
-    let len = device
-        .read_bulk(KINECT_AUDIO_ENDPOINT_IN, &mut buffer, TIMEOUT)
-        .unwrap();
-
+    let len = response.get().len();
     println!("RESPONSE LEN {:#x}", len);
 
     // for status command
