@@ -1,7 +1,6 @@
 mod header;
 mod protocol;
 use header::Header;
-use protocol::external as p;
 use protocol::*;
 
 fn setup_device() -> Option<rusb::DeviceHandle<rusb::GlobalContext>> {
@@ -40,7 +39,7 @@ fn main() -> Result<(), Error> {
 
     let mut seq = 1u32;
 
-    let _firmware_status = p::receive(&device, p::CMD::STATUS, seq, 0x15, 0x60)?;
+    let _firmware_status = receive(&device, CMD::STATUS, seq, 0x15, 0x60)?;
 
     const PAGESIZE: usize = 0x4000;
     let pages = firmware.chunks(PAGESIZE);
@@ -48,16 +47,10 @@ fn main() -> Result<(), Error> {
 
     for (address, page) in addresses.zip(pages) {
         seq += 1;
-        p::send(&device, p::CMD::PAGE, seq, address, page)?;
+        send(&device, CMD::PAGE, seq, address, page)?;
     }
 
     seq += 1;
 
-    p::send(
-        &device,
-        p::CMD::EXECUTE,
-        seq,
-        firmware_header.entry_point,
-        &[],
-    )
+    send(&device, CMD::EXECUTE, seq, firmware_header.entry_point, &[])
 }
