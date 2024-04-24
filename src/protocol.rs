@@ -177,13 +177,13 @@ mod tests {
     }
 }
 
-/// Data packet for upload and download
-struct Packet {
+/// Data packet for receiving data
+struct Response {
     data: [u8; 512],
     len: usize,
 }
 
-impl Packet {
+impl Response {
     fn empty() -> Self {
         Self {
             data: [0u8; 512],
@@ -198,8 +198,8 @@ impl Packet {
     }
 }
 
-fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Packet> {
-    let mut packet = Packet::empty();
+fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Option<Response> {
+    let mut packet = Response::empty();
 
     let len = device
         .read_bulk(KINECT_AUDIO_ENDPOINT_IN, &mut packet.data, TIMEOUT)
