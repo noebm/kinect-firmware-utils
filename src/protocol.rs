@@ -290,12 +290,12 @@ pub fn send(
     let result = internal::receive_status(device)?;
 
     if result.tag != tag {
-        warn!("TAG MISSMATCH EXPECTED {} -  ACTUAL {}", tag, result.tag);
+        error!("TAG MISSMATCH EXPECTED {} -  ACTUAL {}", tag, result.tag);
         return Err(Error::Tag);
     }
 
     if !result.success {
-        warn!("RESULT FAILURE");
+        error!("RESULT FAILURE");
         return Err(Error::Result);
     }
 
@@ -325,7 +325,7 @@ pub fn receive(
     let result = internal::receive_status(device)?;
 
     if response.get().len() != size as usize {
-        warn!(
+        error!(
             "PAYLOAD SIZE MISSMATCH EXPECTED {} - ACTUAL {}",
             size,
             response.get().len()
@@ -334,12 +334,12 @@ pub fn receive(
     }
 
     if result.tag != tag {
-        warn!("TAG MISSMATCH EXPECTED {} -  ACTUAL {}", tag, result.tag);
+        error!("TAG MISSMATCH EXPECTED {} -  ACTUAL {}", tag, result.tag);
         return Err(Error::Tag);
     }
 
     if !result.success {
-        warn!("RESULT FAILURE");
+        error!("RESULT FAILURE");
         return Err(Error::Result);
     }
 
