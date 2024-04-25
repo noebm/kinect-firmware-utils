@@ -1,3 +1,5 @@
+use log::*;
+
 pub const VENDOR_MICROSOFT: u16 = 0x045e;
 pub const PRODUCT_K4W_AUDIO_ORIGINAL: u16 = 0x02be;
 pub const KINECT_AUDIO_CONFIGURATION: u8 = 1;
@@ -11,12 +13,13 @@ mod internal {
     use super::Response;
     use super::{KINECT_AUDIO_ENDPOINT_IN, KINECT_AUDIO_ENDPOINT_OUT, TIMEOUT};
     use binrw::{BinRead, BinWrite};
+    use log::*;
 
     pub fn send_command(
         device: &rusb::DeviceHandle<rusb::GlobalContext>,
         cmd: &Command,
     ) -> Result<(), Error> {
-        println!("COMMAND STATUS {:08x?}", cmd);
+        info!("SENDING {:08x?}", cmd);
         let cmd_buffer = cmd.bytes();
 
         device
@@ -46,6 +49,7 @@ mod internal {
     pub fn receive_status(
         device: &rusb::DeviceHandle<rusb::GlobalContext>,
     ) -> Result<Status, Error> {
+        info!("RECEIVING STATUS RESULT");
         let response = receive(device)?;
         response.try_into().map_err(|_| Error::Result)
     }
@@ -275,8 +279,8 @@ pub fn send(
 
     internal::send_command(device, &cmd)?;
     for packet in internal::packets(data) {
-        println!(
-            "TAG {} - ADDRESS {:x} - PACKET {}",
+        info!(
+            "SENDING PACKET - TAG {} - ADDRESS {:x} - PACKET {}",
             tag,
             address,
             packet.len()
@@ -286,10 +290,12 @@ pub fn send(
     let result = internal::receive_status(device)?;
 
     if result.tag != tag {
+        warn!("TAG MISSMATCH EXPECTED {} -  ACTUAL {}", tag, result.tag);
         return Err(Error::Tag);
     }
 
     if !result.success {
+        warn!("RESULT FAILURE");
         return Err(Error::Result);
     }
 
@@ -312,18 +318,28 @@ pub fn receive(
     };
 
     internal::send_command(device, &cmd)?;
+
+    info!("RECEIVING RESPONSE");
     let response = internal::receive(device)?;
+
     let result = internal::receive_status(device)?;
 
     if response.get().len() != size as usize {
+        warn!(
+            "PAYLOAD SIZE MISSMATCH EXPECTED {} - ACTUAL {}",
+            size,
+            response.get().len()
+        );
         return Err(Error::Payload);
     }
 
     if result.tag != tag {
+        warn!("TAG MISSMATCH EXPECTED {} -  ACTUAL {}", tag, result.tag);
         return Err(Error::Tag);
     }
 
     if !result.success {
+        warn!("RESULT FAILURE");
         return Err(Error::Result);
     }
 
