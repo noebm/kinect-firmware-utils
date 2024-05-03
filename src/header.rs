@@ -16,8 +16,7 @@ impl fmt::Display for Version {
             writer,
             "{:02}.{:02}.{:02}.{:02}",
             self.major, self.minor, self.release, self.patch,
-        )?;
-        Ok(())
+        )
     }
 }
 
@@ -32,12 +31,11 @@ pub struct Header {
 
 impl fmt::Display for Header {
     fn fmt(&self, writer: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(writer, "Found firmware image:\n")?;
-        write!(writer, "\tversion      {}\n", self.version)?;
-        write!(writer, "\tbase address {:#08x}\n", self.base_address)?;
-        write!(writer, "\tsize         {:#08x}\n", self.size)?;
-        write!(writer, "\tentry point  {:#08x}\n", self.entry_point)?;
-        Ok(())
+        writeln!(
+            writer,
+            "version      {}\nbase address {:#08x}\nsize         {:#08x}\nentry point  {:#08x}",
+            self.version, self.base_address, self.size, self.entry_point
+        )
     }
 }
 
