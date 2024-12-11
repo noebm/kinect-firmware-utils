@@ -1,7 +1,4 @@
-mod header;
-mod protocol;
-use header::Header;
-use protocol::*;
+use kinect_firmware_utils::*;
 
 fn setup_device() -> Option<rusb::DeviceHandle<rusb::GlobalContext>> {
     let mut device =
@@ -52,5 +49,11 @@ fn main() -> Result<(), Error> {
 
     seq += 1;
 
-    send(&device, Command::Execute, seq, firmware_header.entry_point, &[])
+    send(
+        &device,
+        Command::Execute,
+        seq,
+        firmware_header.entry_point,
+        &[],
+    )
 }
