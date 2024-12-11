@@ -39,8 +39,8 @@
             version = "1.8";
 
             src = fetchurl {
-              url = "https://download.microsoft.com/download/E/1/D/E1DEC243-0389-4A23-87BF-F47DE869FC1A/KinectSDK-v1.8-Setup.exe";
-              hash = "sha256-BXRlHVV269MyMH31fESSL4XFaUFs0NdbWdH5m76NG1M=";
+              url = "https://download.microsoft.com/download/E/C/5/EC50686B-82F4-4DBF-A922-980183B214E6/KinectRuntime-v1.8-Setup.exe";
+              hash = "sha256-9NQUP7DwqNJ2iJwHe/yK9Cv+mcEoytq14xa/AVqYWOk=";
             };
             buildInputs = [wix-extract.packages.${system}.default p7zip];
 
