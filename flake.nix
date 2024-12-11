@@ -6,7 +6,6 @@
     flake-utils.url = "github:numtide/flake-utils";
     wix-extract.url = "github:noebm/wix-extract";
     wix-extract.inputs.nixpkgs.follows = "nixpkgs";
-    wix-extract.inputs.flake-utils.follows = "flake-utils";
   };
 
   outputs = {

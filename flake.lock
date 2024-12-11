@@ -54,6 +54,27 @@
         "type": "github"
       }
     },
+    "pyproject-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "wix-extract",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1733540292,
+        "narHash": "sha256-UAW/Rs8hx6ai+lAv2c0fP21NXi3SWuJO9p0DNiEYS90=",
+        "owner": "pyproject-nix",
+        "repo": "pyproject.nix",
+        "rev": "e2393999b79ea26c1d399f8fcc34db4a01665e9b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pyproject-nix",
+        "repo": "pyproject.nix",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "crane": "crane",
@@ -79,19 +100,17 @@
     },
     "wix-extract": {
       "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
         "nixpkgs": [
           "nixpkgs"
-        ]
+        ],
+        "pyproject-nix": "pyproject-nix"
       },
       "locked": {
-        "lastModified": 1713366621,
-        "narHash": "sha256-ZyZrZ5ro8q6ajsABBK+6cfcPqSEQte3gYx06CqYVxtw=",
+        "lastModified": 1733929510,
+        "narHash": "sha256-+YyMgeAMEpNR7UId7ADDfmaMsVKcq6rCT0Hmp8P2Pew=",
         "owner": "noebm",
         "repo": "wix-extract",
-        "rev": "072e391e46842efbbc57c6b6e1b6fe5c452dc4d8",
+        "rev": "88aaaa8bca86d3365f06004fb9d822524e19f1c2",
         "type": "github"
       },
       "original": {
