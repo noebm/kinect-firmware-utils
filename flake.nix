@@ -31,9 +31,7 @@
           src = crane-lib.cleanCargoSource (crane-lib.path ./.);
         };
 
-        kinect-firmware-blob = kinect-firmware-blob_1_8;
-
-        kinect-firmware-blob_1_8 = with pkgs;
+        kinect-firmware-blob = with pkgs;
           stdenv.mkDerivation {
             pname = "kinect-firmware-blob";
             version = "1.8";
@@ -51,26 +49,6 @@
 
             installPhase = ''
               cp UACFirmware $out
-            '';
-          };
-
-        kinect-firmware-blob_1_0_beta2 = with pkgs;
-          stdenv.mkDerivation rec {
-            pname = "kinect-firmware-blob";
-            version = "1.0-beta2";
-
-            src = fetchurl {
-              url = "http://download.microsoft.com/download/F/9/9/F99791F2-D5BE-478A-B77A-830AD14950C3/KinectSDK-v1.0-beta2-x86.msi";
-              hash = "sha256-gXdkWRz/esw9Z4xbxl3Icks9JDYRwQENqywY0N7dQiE=";
-            };
-
-            buildInputs = [p7zip];
-            unpackPhase = ''
-              7z e -y -r ${src} "UACFirmware.*" > /dev/null
-            '';
-            installPhase = ''
-              FW_FILE=$(ls UACFirmware.* | cut -d ' ' -f 1)
-              cat $FW_FILE > $out
             '';
           };
 
