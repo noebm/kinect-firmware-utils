@@ -68,7 +68,7 @@ pub fn send(
             address,
             packet.len()
         );
-        internal::send(device, packet);
+        internal::send(device, packet)?;
     }
     let result = internal::receive_status(device)?;
 

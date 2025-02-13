@@ -30,6 +30,7 @@ pub struct Command {
 impl Command {
     fn bytes(&self) -> [u8; 24] {
         let mut writer = std::io::Cursor::new([0u8; 24]);
+        #[allow(clippy::unwrap_used)]
         self.write(&mut writer).unwrap();
         writer.into_inner()
     }
@@ -38,16 +39,16 @@ impl Command {
 pub fn receive_status(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Status, Error> {
     info!("RECEIVING STATUS RESULT");
     let response = receive(device)?;
-    response.try_into().map_err(|_| Error::Result)
+    response.try_into()
 }
 
 impl TryFrom<Response> for Status {
-    type Error = ();
+    type Error = Error;
     fn try_from(value: Response) -> Result<Self, Self::Error> {
         if value.get().len() != 12 {
-            return Err(());
+            return Err(Error::Result);
         }
-        Self::read(&mut std::io::Cursor::new(value.get())).map_err(|_| ())
+        Self::read(&mut std::io::Cursor::new(value.get())).map_err(|_| Error::Result)
     }
 }
 
@@ -69,10 +70,11 @@ impl<'a> Packet<'a> {
     }
 }
 
-pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: Packet) {
-    device
+pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: Packet) -> Result<(), Error> {
+    let _ = device
         .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, packet.0, TIMEOUT)
-        .unwrap();
+        .map_err(Error::USB)?;
+    Ok(())
 }
 
 pub struct Packets<'a>(core::slice::Chunks<'a, u8>);
