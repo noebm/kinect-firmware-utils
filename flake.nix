@@ -8,82 +8,98 @@
     wix-extract.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    flake-utils,
-    crane,
-    wix-extract,
-  }:
-    flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      crane-lib = crane.lib.${system};
-    in {
-      devShells.default = with pkgs;
-        mkShell {
-          buildInputs = [cargo rustc rustfmt pre-commit rustPackages.clippy];
-          RUST_SRC_PATH = rustPlatform.rustLibSrc;
-        };
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      crane,
+      wix-extract,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        crane-lib = crane.lib.${system};
+      in
+      {
+        devShells.default =
+          with pkgs;
+          mkShell {
+            buildInputs = [
+              cargo
+              rustc
+              rustfmt
+              pre-commit
+              rustPackages.clippy
+            ];
+            RUST_SRC_PATH = rustPlatform.rustLibSrc;
+          };
 
-      packages = rec {
-        default = kinect-firmware-utils;
-        kinect-firmware-utils = crane-lib.buildPackage {
-          src = crane-lib.cleanCargoSource (crane-lib.path ./.);
-        };
+        packages = rec {
+          default = kinect-firmware-utils;
+          kinect-firmware-utils = crane-lib.buildPackage {
+            src = crane-lib.cleanCargoSource (crane-lib.path ./.);
+          };
 
-        kinect-firmware-blob = with pkgs;
-          stdenv.mkDerivation {
-            pname = "kinect-firmware-blob";
-            version = "1.8";
+          kinect-firmware-blob =
+            with pkgs;
+            stdenv.mkDerivation {
+              pname = "kinect-firmware-blob";
+              version = "1.8";
 
-            src = fetchurl {
-              url = "https://download.microsoft.com/download/E/C/5/EC50686B-82F4-4DBF-A922-980183B214E6/KinectRuntime-v1.8-Setup.exe";
-              hash = "sha256-9NQUP7DwqNJ2iJwHe/yK9Cv+mcEoytq14xa/AVqYWOk=";
+              src = fetchurl {
+                url = "https://download.microsoft.com/download/E/C/5/EC50686B-82F4-4DBF-A922-980183B214E6/KinectRuntime-v1.8-Setup.exe";
+                hash = "sha256-9NQUP7DwqNJ2iJwHe/yK9Cv+mcEoytq14xa/AVqYWOk=";
+              };
+              buildInputs = [ p7zip ];
+
+              unpackPhase = ''
+                ${wix-extract.apps.${system}.default.program} $src -d $TMP
+                7z e -y -r $TMP/KinectDrivers-v1.8-x86.WHQL.msi "UACFirmware" > /dev/null
+              '';
+
+              installPhase = ''
+                cp UACFirmware $out
+              '';
             };
-            buildInputs = [p7zip];
 
-            unpackPhase = ''
-              ${wix-extract.apps.${system}.default.program} $src -d $TMP
-              7z e -y -r $TMP/KinectDrivers-v1.8-x86.WHQL.msi "UACFirmware" > /dev/null
-            '';
+          kinect-udev-rules =
+            with pkgs;
+            stdenv.mkDerivation rec {
+              name = "kinect-udev-rules";
 
-            installPhase = ''
-              cp UACFirmware $out
-            '';
-          };
+              src = ./udev;
+              RULES = "55-kinect_audio.rules";
+              RULES_IN = "${RULES}.in";
 
-        kinect-udev-rules = with pkgs;
-          stdenv.mkDerivation rec {
-            name = "kinect-udev-rules";
+              patchPhase = ''
+                substitute ${RULES_IN} ${RULES} \
+                  --subst-var-by LOADER_PATH ${kinect-firmware-utils}/bin/kinect-firmware-utils \
+                  --subst-var-by FIRMWARE_PATH ${kinect-firmware-blob}
+              '';
 
-            src = ./udev;
-            RULES = "55-kinect_audio.rules";
-            RULES_IN = "${RULES}.in";
-
-            patchPhase = ''
-              substitute ${RULES_IN} ${RULES} \
-                --subst-var-by LOADER_PATH ${kinect-firmware-utils}/bin/kinect-firmware-utils \
-                --subst-var-by FIRMWARE_PATH ${kinect-firmware-blob}
-            '';
-
-            installPhase = ''
-              install -D ${RULES} $out/lib/udev/rules.d/${RULES}
-            '';
-          };
-      };
-      apps = rec {
-        kinect-firmware-utils = flake-utils.lib.mkApp {
-          drv = self.packages.${system}.kinect-firmware-utils;
+              installPhase = ''
+                install -D ${RULES} $out/lib/udev/rules.d/${RULES}
+              '';
+            };
         };
-        firmware-status = flake-utils.lib.mkApp {
-          name = "firmware-status";
-          drv = self.packages.${system}.kinect-firmware-utils;
+        apps = rec {
+          kinect-firmware-utils = flake-utils.lib.mkApp {
+            drv = self.packages.${system}.kinect-firmware-utils;
+          };
+          firmware-status = flake-utils.lib.mkApp {
+            name = "firmware-status";
+            drv = self.packages.${system}.kinect-firmware-utils;
+          };
+          default = kinect-firmware-utils;
         };
-        default = kinect-firmware-utils;
-      };
 
-      nixosModules.default = {system, ...}: {
-        services.udev.packages = [self.packages."${system}".kinect-udev-rules];
-      };
-    });
+        nixosModules.default =
+          { system, ... }:
+          {
+            services.udev.packages = [ self.packages."${system}".kinect-udev-rules ];
+          };
+      }
+    );
 }
