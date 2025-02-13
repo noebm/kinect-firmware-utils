@@ -60,6 +60,57 @@ pub struct Status {
     pub success: bool,
 }
 
+/// Data packet for sending data
+pub struct Packet<'a>(&'a [u8]);
+
+impl<'a> Packet<'a> {
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: Packet) {
+    device
+        .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, packet.0, TIMEOUT)
+        .unwrap();
+}
+
+pub struct Packets<'a>(core::slice::Chunks<'a, u8>);
+
+const PACKET_SIZE: usize = 512;
+
+impl<'a> From<&'a [u8]> for Packets<'a> {
+    fn from(value: &'a [u8]) -> Self {
+        Self(value.chunks(PACKET_SIZE))
+    }
+}
+
+pub fn packets(data: &[u8]) -> Packets {
+    data.into()
+}
+
+impl<'a> std::iter::Iterator for Packets<'a> {
+    type Item = Packet<'a>;
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(Packet(self.0.next()?))
+    }
+}
+
+pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Response, Error> {
+    let mut packet = Response::empty();
+
+    let len = device
+        .read_bulk(KINECT_AUDIO_ENDPOINT_IN, &mut packet.data, TIMEOUT)
+        .map_err(Error::USB)?;
+
+    if len > packet.data.len() {
+        return Err(Error::Payload);
+    }
+
+    packet.len = len;
+    Ok(packet)
+}
+
 #[cfg(test)]
 mod tests {
     use super::Command;
@@ -160,55 +211,4 @@ mod tests {
         assert_eq!(status.tag, 1);
         assert!(status.success);
     }
-}
-
-/// Data packet for sending data
-pub struct Packet<'a>(&'a [u8]);
-
-impl<'a> Packet<'a> {
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-}
-
-pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: Packet) {
-    device
-        .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, packet.0, TIMEOUT)
-        .unwrap();
-}
-
-pub struct Packets<'a>(core::slice::Chunks<'a, u8>);
-
-const PACKET_SIZE: usize = 512;
-
-impl<'a> From<&'a [u8]> for Packets<'a> {
-    fn from(value: &'a [u8]) -> Self {
-        Self(value.chunks(PACKET_SIZE))
-    }
-}
-
-pub fn packets(data: &[u8]) -> Packets {
-    data.into()
-}
-
-impl<'a> std::iter::Iterator for Packets<'a> {
-    type Item = Packet<'a>;
-    fn next(&mut self) -> Option<Self::Item> {
-        Some(Packet(self.0.next()?))
-    }
-}
-
-pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Response, Error> {
-    let mut packet = Response::empty();
-
-    let len = device
-        .read_bulk(KINECT_AUDIO_ENDPOINT_IN, &mut packet.data, TIMEOUT)
-        .map_err(Error::USB)?;
-
-    if len > packet.data.len() {
-        return Err(Error::Payload);
-    }
-
-    packet.len = len;
-    Ok(packet)
 }
