@@ -112,6 +112,7 @@ pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Respo
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::Command;
 
