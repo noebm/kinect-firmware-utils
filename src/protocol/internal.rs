@@ -28,8 +28,8 @@ pub struct Command {
 }
 
 impl Command {
-    fn bytes(&self) -> Vec<u8> {
-        let mut writer = std::io::Cursor::new(Vec::with_capacity(6 * 4));
+    fn bytes(&self) -> [u8; 24] {
+        let mut writer = std::io::Cursor::new([0u8; 24]);
         self.write(&mut writer).unwrap();
         writer.into_inner()
     }
