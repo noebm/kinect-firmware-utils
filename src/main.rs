@@ -1,20 +1,19 @@
 use kinect_firmware_utils::*;
 
 fn setup_device() -> Option<rusb::DeviceHandle<rusb::GlobalContext>> {
-    let mut device =
-        rusb::open_device_with_vid_pid(VENDOR_MICROSOFT, PRODUCT_K4W_AUDIO_ORIGINAL).unwrap();
+    let mut device = rusb::open_device_with_vid_pid(VENDOR_MICROSOFT, PRODUCT_K4W_AUDIO_ORIGINAL)?;
 
-    if device.active_configuration().unwrap() != KINECT_AUDIO_CONFIGURATION {
+    if device.active_configuration().ok()? != KINECT_AUDIO_CONFIGURATION {
         device
             .set_active_configuration(KINECT_AUDIO_CONFIGURATION)
-            .unwrap();
+            .ok()?;
     }
 
-    device.set_auto_detach_kernel_driver(true).unwrap();
+    device.set_auto_detach_kernel_driver(true).ok()?;
 
-    device.claim_interface(KINECT_AUDIO_INTERFACE).unwrap();
+    device.claim_interface(KINECT_AUDIO_INTERFACE).ok()?;
 
-    if device.active_configuration().unwrap() != KINECT_AUDIO_CONFIGURATION {
+    if device.active_configuration().ok()? != KINECT_AUDIO_CONFIGURATION {
         println!("device configuration changed!");
         return None;
     }
@@ -32,7 +31,7 @@ fn main() -> Result<(), Error> {
     println!("FIRMWARE HEADER {}", firmware_header);
     assert_eq!(firmware_header.size, firmware.len() as u32);
 
-    let device = setup_device().unwrap();
+    let device = setup_device().expect("Failed to initialize device.");
 
     let mut seq = 1u32;
 
