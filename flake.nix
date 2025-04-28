@@ -2,7 +2,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     crane.url = "github:ipetkov/crane";
-    crane.inputs.nixpkgs.follows = "nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
     wix-extract.url = "github:noebm/wix-extract";
     wix-extract.inputs.nixpkgs.follows = "nixpkgs";
@@ -20,7 +19,7 @@
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        crane-lib = crane.lib.${system};
+        crane-lib = crane.mkLib pkgs;
       in
       {
         devShells.default =
