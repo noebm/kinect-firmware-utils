@@ -87,7 +87,7 @@ impl<'a> From<&'a [u8]> for Packets<'a> {
     }
 }
 
-pub fn packets(data: &[u8]) -> Packets {
+pub fn packets(data: &[u8]) -> Packets<'_> {
     data.into()
 }
 
