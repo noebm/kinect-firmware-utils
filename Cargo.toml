@@ -8,7 +8,7 @@ default-run = "kinect-firmware-utils"
 unwrap_used = "warn"
 
 [dependencies]
-binrw = "0.14"
+binrw = "0.15"
 env_logger = "0.11"
 log = "0.4"
 rusb = "0.9"
