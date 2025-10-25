@@ -14,51 +14,70 @@
       flake-utils,
       crane,
       wix-extract,
-    }@inputs:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        kinect-packages = import ./pkgs {
-          inherit pkgs;
-          crane-lib = crane.mkLib pkgs;
-          wix-extract = wix-extract.apps.${system}.default.program;
-        };
-      in
-      {
-        devShells.default =
-          with pkgs;
-          mkShell {
-            buildInputs = [
-              cargo
-              rustc
-              rustfmt
-              pre-commit
-              rustPackages.clippy
+    }:
+    let
+      per-system = flake-utils.lib.eachDefaultSystem (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          kinect-packages = import ./pkgs {
+            inherit pkgs;
+            crane-lib = crane.mkLib pkgs;
+            wix-extract = wix-extract.apps.${system}.default.program;
+          };
+        in
+        {
+          devShells.default =
+            with pkgs;
+            mkShell {
+              buildInputs = [
+                cargo
+                rustc
+                rustfmt
+                pre-commit
+                rustPackages.clippy
+              ];
+              RUST_SRC_PATH = rustPlatform.rustLibSrc;
+            };
+
+          packages = rec {
+            inherit (kinect-packages) kinect-firmware-blob kinect-udev-rules kinect-firmware-utils;
+            default = kinect-firmware-utils;
+          };
+          apps = rec {
+            kinect-firmware-utils = flake-utils.lib.mkApp {
+              drv = self.packages.${system}.kinect-firmware-utils;
+            };
+            firmware-status = flake-utils.lib.mkApp {
+              name = "firmware-status";
+              drv = self.packages.${system}.kinect-firmware-utils;
+            };
+            default = kinect-firmware-utils;
+          };
+        }
+      );
+
+    in
+    per-system
+    // {
+      nixosModules.default =
+        {
+          pkgs,
+          lib,
+          config,
+          ...
+        }:
+        let
+          cfg = config.hardware.kinect-audio;
+        in
+        {
+          options.hardware.kinect-audio.enable = lib.mkEnableOption "kinect audio support";
+
+          config = lib.mkIf cfg.enable {
+            services.udev.packages = [
+              self.packages."${pkgs.system}".kinect-udev-rules
             ];
-            RUST_SRC_PATH = rustPlatform.rustLibSrc;
           };
-
-        packages = rec {
-          inherit (kinect-packages) kinect-firmware-blob kinect-udev-rules kinect-firmware-utils;
-          default = kinect-firmware-utils;
         };
-        apps = rec {
-          kinect-firmware-utils = flake-utils.lib.mkApp {
-            drv = self.packages.${system}.kinect-firmware-utils;
-          };
-          firmware-status = flake-utils.lib.mkApp {
-            name = "firmware-status";
-            drv = self.packages.${system}.kinect-firmware-utils;
-          };
-          default = kinect-firmware-utils;
-        };
-
-        nixosModules.default =
-          { system, ... }:
-          {
-            services.udev.packages = [ self.packages."${system}".kinect-udev-rules ];
-          };
-      }
-    );
+    };
 }
