@@ -20,6 +20,6 @@ stdenv.mkDerivation {
   '';
 
   installPhase = ''
-    cp UACFirmware $out
+    install -Dm644 UACFirmware "$out/share/kinect-audio.fw"
   '';
 }
