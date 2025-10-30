@@ -41,8 +41,8 @@
             };
 
           packages = rec {
-            inherit (kinect-packages) kinect-firmware-blob kinect-udev-rules kinect-firmware-utils;
-            default = kinect-firmware-utils;
+            inherit (kinect-packages) kinect-firmware;
+            default = kinect-firmware;
           };
           apps = rec {
             kinect-firmware-utils = flake-utils.lib.mkApp {
@@ -75,7 +75,7 @@
 
           config = lib.mkIf cfg.enable {
             services.udev.packages = [
-              self.packages."${pkgs.system}".kinect-udev-rules
+              self.packages."${pkgs.system}".kinect-firmware
             ];
           };
         };

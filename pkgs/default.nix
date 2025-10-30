@@ -9,4 +9,12 @@ rec {
   kinect-udev-rules = pkgs.callPackage ./kinect-udev-rules.nix {
     inherit kinect-firmware-blob kinect-firmware-utils;
   };
+  kinect-firmware = pkgs.symlinkJoin {
+    name = "kinect-firmware";
+    paths = [
+      kinect-firmware-blob
+      kinect-firmware-utils
+      kinect-udev-rules
+    ];
+  };
 }
