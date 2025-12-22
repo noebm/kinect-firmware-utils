@@ -46,11 +46,11 @@
           };
           apps = rec {
             kinect-firmware-utils = flake-utils.lib.mkApp {
-              drv = self.packages.${system}.kinect-firmware-utils;
+              drv = self.packages.${system}.kinect-firmware;
             };
             firmware-status = flake-utils.lib.mkApp {
               name = "firmware-status";
-              drv = self.packages.${system}.kinect-firmware-utils;
+              drv = self.packages.${system}.kinect-firmware;
             };
             default = kinect-firmware-utils;
           };
