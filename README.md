@@ -22,3 +22,34 @@ Implementation based on [kinect-audio-setup](https://git.ao2.it/kinect-audio-set
 ## Usb protocol
 
 Apparently the [usb protocol](https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/src/usbcommand/usbcommand.c#L598) for Azure Kinect Sensor is mostly the same.
+
+## PipeWire microphone array downmix
+
+The Kinect for Windows audio firmware exposes the microphone array as a
+4-channel, 16 kHz, 32-bit capture device. Some desktop applications handle that
+as a surround input instead of a microphone array, which can make the usable
+voice level too low.
+
+The NixOS module can create a virtual mono PipeWire source by downmixing the
+four Kinect channels:
+
+```nix
+{
+  imports = [ inputs.kinect-firmware-utils.nixosModules.default ];
+
+  hardware.kinect-audio = {
+    enable = true;
+
+    downmix = {
+      enable = true;
+      gain = 0.25;
+
+      # Optional fallback if WirePlumber does not detect the Kinect source:
+      # sourceNodeName = "alsa_input.usb-Microsoft_Kinect_for_Windows_USB_Audio_<serial>-02.analog-surround-40";
+    };
+  };
+}
+```
+
+After switching the system configuration, restart PipeWire or log out and back
+in. Select `Kinect Microphone Array Mono` as the input source in applications.
