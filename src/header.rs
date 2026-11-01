@@ -40,8 +40,8 @@ impl fmt::Display for Header {
 }
 
 impl Header {
-    pub fn from_slice(buffer: &[u8]) -> Option<Self> {
-        Self::read(&mut std::io::Cursor::new(buffer)).ok()
+    pub fn from_slice(buffer: &[u8]) -> binrw::BinResult<Self> {
+        Self::read(&mut std::io::Cursor::new(buffer))
     }
 }
 
@@ -49,6 +49,20 @@ impl Header {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reject_invalid_magic() {
+        assert!(matches!(
+            Header::from_slice(&[0; 24]),
+            Err(binrw::Error::BadMagic { .. })
+        ));
+    }
+
+    #[test]
+    fn reject_truncated_header() {
+        let data = b"\x0d\xf0\x77\xca";
+        assert!(matches!(Header::from_slice(data), Err(error) if error.is_eof()));
+    }
 
     #[test]
     fn parse_header() {

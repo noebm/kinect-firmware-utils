@@ -24,7 +24,17 @@ impl fmt::Display for Version {
     }
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> std::process::ExitCode {
+    match run() {
+        Ok(()) => std::process::ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            std::process::ExitCode::FAILURE
+        }
+    }
+}
+
+fn run() -> Result<(), Error> {
     env_logger::init();
 
     let device = open_audio_device(0x02c3)?;
