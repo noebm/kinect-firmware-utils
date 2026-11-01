@@ -31,17 +31,40 @@ impl Response {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[allow(clippy::upper_case_acronyms)]
-    USB(rusb::Error),
-    ShortWrite {
-        expected: usize,
-        actual: usize,
-    },
+    #[error("USB operation failed: {0}")]
+    USB(#[from] rusb::Error),
+    #[error("Kinect audio device {VENDOR_MICROSOFT:04x}:{product:04x} not found")]
+    DeviceNotFound { product: u16 },
+    #[error("device configuration changed: expected {KINECT_AUDIO_CONFIGURATION}, got {actual}")]
+    Configuration { actual: u8 },
+    #[error("incomplete USB write: expected {expected} bytes, wrote {actual}")]
+    ShortWrite { expected: usize, actual: usize },
+    #[error("invalid USB response payload size")]
     Payload,
+    #[error("USB response tag does not match the command")]
     Tag,
+    #[error("invalid command status response or command failed")]
     Result,
+}
+
+/// Opens the first Kinect audio device matching the product ID.
+/// The caller is responsible for configuration and interface setup.
+pub fn open_audio_device(product: u16) -> Result<rusb::DeviceHandle<rusb::GlobalContext>, Error> {
+    let devices = rusb::devices()?;
+
+    for device in devices.iter() {
+        let descriptor = device.device_descriptor()?;
+        if descriptor.vendor_id() != VENDOR_MICROSOFT || descriptor.product_id() != product {
+            continue;
+        }
+
+        return Ok(device.open()?);
+    }
+
+    Err(Error::DeviceNotFound { product })
 }
 
 #[repr(u32)]

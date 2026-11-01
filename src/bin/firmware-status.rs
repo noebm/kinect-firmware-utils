@@ -27,7 +27,10 @@ impl fmt::Display for Version {
 fn main() -> Result<(), Error> {
     env_logger::init();
 
-    let device = rusb::open_device_with_vid_pid(VENDOR_MICROSOFT, 0x02c3).unwrap();
+    let device = open_audio_device(0x02c3)?;
+
+    // Claim the command interface without changing configuration or detaching a driver.
+    device.claim_interface(KINECT_AUDIO_INTERFACE)?;
 
     let tag = 0x1337;
 
