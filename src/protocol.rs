@@ -8,7 +8,9 @@ pub const KINECT_AUDIO_CONFIGURATION: u8 = 1;
 pub const KINECT_AUDIO_INTERFACE: u8 = 0;
 pub const KINECT_AUDIO_ENDPOINT_IN: u8 = 0x81;
 pub const KINECT_AUDIO_ENDPOINT_OUT: u8 = 0x01;
-pub const TIMEOUT: std::time::Duration = std::time::Duration::ZERO;
+/// Timeout for each USB transfer, including the device's command acknowledgement.
+/// A zero duration would allow a stalled device to block indefinitely.
+pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 /// Data packet for receiving data
 pub struct Response {
