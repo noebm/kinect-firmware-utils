@@ -35,6 +35,10 @@ impl Response {
 pub enum Error {
     #[allow(clippy::upper_case_acronyms)]
     USB(rusb::Error),
+    ShortWrite {
+        expected: usize,
+        actual: usize,
+    },
     Payload,
     Tag,
     Result,

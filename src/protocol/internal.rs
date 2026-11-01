@@ -11,9 +11,17 @@ pub fn send_command(
     info!("SENDING {:08x?}", cmd);
     let cmd_buffer = cmd.bytes();
 
-    device
+    let actual = device
         .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, &cmd_buffer, TIMEOUT)
         .map_err(Error::USB)?;
+
+    if actual != cmd_buffer.len() {
+        return Err(Error::ShortWrite {
+            expected: cmd_buffer.len(),
+            actual,
+        });
+    }
+
     Ok(())
 }
 
@@ -71,9 +79,17 @@ impl<'a> Packet<'a> {
 }
 
 pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: Packet) -> Result<(), Error> {
-    let _ = device
+    let actual = device
         .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, packet.0, TIMEOUT)
         .map_err(Error::USB)?;
+
+    if actual != packet.len() {
+        return Err(Error::ShortWrite {
+            expected: packet.len(),
+            actual,
+        });
+    }
+
     Ok(())
 }
 
