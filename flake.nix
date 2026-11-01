@@ -45,17 +45,25 @@
             default = kinect-firmware;
           };
           apps = rec {
-            kinect-firmware-utils = flake-utils.lib.mkApp {
-              drv = self.packages.${system}.kinect-firmware;
-            };
-            firmware-status = flake-utils.lib.mkApp {
-              name = "firmware-status";
-              drv = self.packages.${system}.kinect-firmware;
-            };
+            kinect-firmware-utils =
+              (flake-utils.lib.mkApp {
+                drv = self.packages.${system}.kinect-firmware;
+              })
+              // {
+                meta.description = "Upload Kinect audio firmware";
+              };
+            firmware-status =
+              (flake-utils.lib.mkApp {
+                name = "firmware-status";
+                drv = self.packages.${system}.kinect-firmware;
+              })
+              // {
+                meta.description = "Query Kinect audio firmware status";
+              };
             default = kinect-firmware-utils;
           };
 
-          checks = nixpkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
+          checks = nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
             nixos-module-downmix =
               let
                 evaluatedConfig = nixpkgs.lib.nixosSystem {
