@@ -16,7 +16,10 @@
       wix-extract,
     }:
     let
-      per-system = flake-utils.lib.eachDefaultSystem (
+      # See: https://github.com/numtide/flake-utils/issues/124
+      # nixpkgs 26.11 no longer supports Intel Darwin.
+      systems = builtins.filter (system: system != "x86_64-darwin") flake-utils.lib.defaultSystems;
+      per-system = flake-utils.lib.eachSystem systems (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
