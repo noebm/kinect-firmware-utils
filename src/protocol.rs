@@ -17,20 +17,12 @@ pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 /// Data packet for receiving data
 pub struct Response {
-    data: [u8; PACKET_SIZE],
-    len: usize,
+    packet: internal::Packet,
 }
 
 impl Response {
-    fn empty() -> Self {
-        Self {
-            data: [0u8; PACKET_SIZE],
-            len: 0,
-        }
-    }
-
     pub fn get(&self) -> &[u8] {
-        &self.data[..self.len]
+        self.packet.as_slice()
     }
 }
 
@@ -94,7 +86,7 @@ pub fn send(
     address: u32,
     data: &[u8],
 ) -> Result<(), Error> {
-    let cmd = command::Command::firmware(command as u32, tag, address, data.len() as u32);
+    let cmd = command::firmware(command as u32, tag, address, data.len() as u32);
 
     info!("SENDING {:08x?}", cmd);
     internal::send(device, cmd.as_slice())?;
@@ -122,26 +114,26 @@ pub fn receive(
     address: u32,
     size: u32,
 ) -> Result<Response, Error> {
-    let cmd = command::Command::firmware(command as u32, tag, address, size);
+    let cmd = command::firmware(command as u32, tag, address, size);
 
     info!("SENDING {:08x?}", cmd);
     internal::send(device, cmd.as_slice())?;
 
     info!("RECEIVING RESPONSE");
-    let response = internal::receive(device)?;
+    let packet = internal::receive(device)?;
 
     let result = internal::receive_status(device)?;
 
-    if response.get().len() != size as usize {
+    if packet.as_slice().len() != size as usize {
         error!(
             "PAYLOAD SIZE MISMATCH EXPECTED {} - ACTUAL {}",
             size,
-            response.get().len()
+            packet.as_slice().len()
         );
         return Err(Error::Payload);
     }
 
     result.check(tag)?;
 
-    Ok(response)
+    Ok(Response { packet })
 }

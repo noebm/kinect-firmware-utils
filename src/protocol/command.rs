@@ -1,29 +1,12 @@
-#[derive(Debug)]
-pub(super) struct Command {
-    data: [u8; 24],
-    len: usize,
-}
+use super::internal::Packet;
 
-impl Command {
-    pub(super) fn firmware(command: u32, tag: u32, address: u32, size: u32) -> Self {
-        let words = [0x06022009, tag, size, command, address, 0];
-        let mut data = [0; 24];
-
-        for (chunk, word) in data.chunks_mut(4).zip(words) {
-            chunk.copy_from_slice(&word.to_le_bytes());
-        }
-
-        Self { data, len: 24 }
-    }
-
-    pub(super) fn as_slice(&self) -> &[u8] {
-        &self.data[..self.len]
-    }
+pub(super) fn firmware(command: u32, tag: u32, address: u32, size: u32) -> Packet {
+    Packet::from_command(&[0x06022009, tag, size, command, address, 0])
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Command;
+    use super::firmware;
 
     fn le_bytes(cmd: &[u32; 6]) -> Vec<u8> {
         let cmd_buffer = cmd
@@ -45,7 +28,7 @@ mod tests {
             0x00000015u32, // address
             0x00000000u32, // unk
         ];
-        let status = Command::firmware(0, seq, 0x15, 0x60);
+        let status = firmware(0, seq, 0x15, 0x60);
 
         assert_eq!(le_bytes(&status_cmd), status.as_slice());
     }
@@ -63,7 +46,7 @@ mod tests {
             address,           // address
             0x00000000u32,     // unk
         ];
-        let page = Command::firmware(3, seq, address, page_len as u32);
+        let page = firmware(3, seq, address, page_len as u32);
 
         assert_eq!(le_bytes(&page_cmd), page.as_slice());
     }
@@ -80,7 +63,7 @@ mod tests {
             entry_point,    // address
             0x0000_0000u32, // unk
         ];
-        let finished = Command::firmware(4, seq, entry_point, 0);
+        let finished = firmware(4, seq, entry_point, 0);
 
         assert_eq!(le_bytes(&finished_cmd), finished.as_slice());
     }
