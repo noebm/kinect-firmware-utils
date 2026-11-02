@@ -69,18 +69,9 @@ pub struct Status {
     pub success: bool,
 }
 
-/// Data packet for sending data
-pub struct Packet<'a>(&'a [u8]);
-
-impl<'a> Packet<'a> {
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-}
-
-pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: Packet) -> Result<(), Error> {
+pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: &[u8]) -> Result<(), Error> {
     let actual = device
-        .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, packet.0, TIMEOUT)
+        .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, packet, TIMEOUT)
         .map_err(Error::USB)?;
 
     if actual != packet.len() {
@@ -93,25 +84,10 @@ pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: Packet) ->
     Ok(())
 }
 
-pub struct Packets<'a>(core::slice::Chunks<'a, u8>);
-
 const PACKET_SIZE: usize = 512;
 
-impl<'a> From<&'a [u8]> for Packets<'a> {
-    fn from(value: &'a [u8]) -> Self {
-        Self(value.chunks(PACKET_SIZE))
-    }
-}
-
-pub fn packets(data: &[u8]) -> Packets<'_> {
-    data.into()
-}
-
-impl<'a> std::iter::Iterator for Packets<'a> {
-    type Item = Packet<'a>;
-    fn next(&mut self) -> Option<Self::Item> {
-        Some(Packet(self.0.next()?))
-    }
+pub fn packets(data: &[u8]) -> core::slice::Chunks<'_, u8> {
+    data.chunks(PACKET_SIZE)
 }
 
 pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Response, Error> {
