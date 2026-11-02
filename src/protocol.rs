@@ -2,6 +2,8 @@ use log::*;
 
 mod internal;
 
+const PACKET_SIZE: usize = 512;
+
 pub const VENDOR_MICROSOFT: u16 = 0x045e;
 pub const PRODUCT_K4W_AUDIO_ORIGINAL: u16 = 0x02be;
 pub const KINECT_AUDIO_CONFIGURATION: u8 = 1;
@@ -14,14 +16,14 @@ pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 /// Data packet for receiving data
 pub struct Response {
-    data: [u8; 512],
+    data: [u8; PACKET_SIZE],
     len: usize,
 }
 
 impl Response {
     fn empty() -> Self {
         Self {
-            data: [0u8; 512],
+            data: [0u8; PACKET_SIZE],
             len: 0,
         }
     }

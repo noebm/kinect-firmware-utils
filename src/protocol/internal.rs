@@ -1,6 +1,6 @@
-use super::Error;
-use super::Response;
-use super::{KINECT_AUDIO_ENDPOINT_IN, KINECT_AUDIO_ENDPOINT_OUT, TIMEOUT};
+use super::{
+    Error, Response, KINECT_AUDIO_ENDPOINT_IN, KINECT_AUDIO_ENDPOINT_OUT, PACKET_SIZE, TIMEOUT,
+};
 use binrw::BinRead;
 use log::*;
 
