@@ -91,13 +91,7 @@ pub fn send(
     address: u32,
     data: &[u8],
 ) -> Result<(), Error> {
-    let cmd = internal::Command {
-        command: command as u32,
-        tag,
-        address,
-        size: data.len() as u32,
-        unk: 0,
-    };
+    let cmd = internal::Command::firmware(command, tag, address, data.len() as u32);
 
     internal::send_command(device, &cmd)?;
     for packet in internal::packets(data) {
@@ -131,13 +125,7 @@ pub fn receive(
     address: u32,
     size: u32,
 ) -> Result<Response, Error> {
-    let cmd = internal::Command {
-        command: command as u32,
-        tag,
-        address,
-        size,
-        unk: 0,
-    };
+    let cmd = internal::Command::firmware(command, tag, address, size);
 
     internal::send_command(device, &cmd)?;
 

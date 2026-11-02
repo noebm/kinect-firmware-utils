@@ -1,7 +1,7 @@
 use super::Error;
 use super::Response;
 use super::{KINECT_AUDIO_ENDPOINT_IN, KINECT_AUDIO_ENDPOINT_OUT, TIMEOUT};
-use binrw::{BinRead, BinWrite};
+use binrw::BinRead;
 use log::*;
 
 pub fn send_command(
@@ -9,27 +9,28 @@ pub fn send_command(
     cmd: &Command,
 ) -> Result<(), Error> {
     info!("SENDING {:08x?}", cmd);
-    let cmd_buffer = cmd.bytes();
-
-    send(device, &cmd_buffer)
+    send(device, cmd.as_slice())
 }
 
-#[derive(Debug, BinWrite)]
-#[bw(little, magic = b"\x09\x20\x02\x06")]
+#[derive(Debug)]
 pub struct Command {
-    pub tag: u32,
-    pub size: u32,
-    pub command: u32,
-    pub address: u32,
-    pub unk: u32,
+    data: [u8; 24],
+    len: usize,
 }
 
 impl Command {
-    fn bytes(&self) -> [u8; 24] {
-        let mut writer = std::io::Cursor::new([0u8; 24]);
-        #[allow(clippy::unwrap_used)]
-        self.write(&mut writer).unwrap();
-        writer.into_inner()
+    pub fn firmware(command: super::Command, tag: u32, address: u32, size: u32) -> Self {
+        let words = [0x06022009, tag, size, command as u32, address, 0];
+        let mut data = [0; 24];
+        for (chunk, word) in data.chunks_mut(4).zip(words) {
+            chunk.copy_from_slice(&word.to_le_bytes());
+        }
+
+        Self { data, len: 24 }
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        &self.data[..self.len]
     }
 }
 
@@ -119,15 +120,9 @@ mod tests {
             0x00000015u32, // address
             0x00000000u32, // unk
         ];
-        let status = Command {
-            tag: seq,
-            command: 0,
-            address: 0x15,
-            size: 0x60,
-            unk: 0,
-        };
+        let status = Command::firmware(super::super::Command::Status, seq, 0x15, 0x60);
 
-        assert_eq!(le_bytes(&status_cmd), status.bytes());
+        assert_eq!(le_bytes(&status_cmd), status.as_slice());
     }
 
     #[test]
@@ -143,15 +138,9 @@ mod tests {
             address,           // address
             0x00000000u32,     // unk
         ];
-        let page = Command {
-            tag: seq,
-            command: 3,
-            address,
-            size: page_len as u32,
-            unk: 0,
-        };
+        let page = Command::firmware(super::super::Command::Page, seq, address, page_len as u32);
 
-        assert_eq!(le_bytes(&page_cmd), page.bytes());
+        assert_eq!(le_bytes(&page_cmd), page.as_slice());
     }
 
     #[test]
@@ -166,15 +155,9 @@ mod tests {
             entry_point,    // address
             0x0000_0000u32, // unk
         ];
-        let finished = Command {
-            tag: seq,
-            command: 0x04,
-            address: entry_point,
-            size: 0,
-            unk: 0,
-        };
+        let finished = Command::firmware(super::super::Command::Execute, seq, entry_point, 0);
 
-        assert_eq!(le_bytes(&finished_cmd), finished.bytes());
+        assert_eq!(le_bytes(&finished_cmd), finished.as_slice());
     }
 
     use super::{Response, Status};
