@@ -11,18 +11,7 @@ pub fn send_command(
     info!("SENDING {:08x?}", cmd);
     let cmd_buffer = cmd.bytes();
 
-    let actual = device
-        .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, &cmd_buffer, TIMEOUT)
-        .map_err(Error::USB)?;
-
-    if actual != cmd_buffer.len() {
-        return Err(Error::ShortWrite {
-            expected: cmd_buffer.len(),
-            actual,
-        });
-    }
-
-    Ok(())
+    send(device, &cmd_buffer)
 }
 
 #[derive(Debug, BinWrite)]
