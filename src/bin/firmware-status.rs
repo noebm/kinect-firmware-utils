@@ -61,9 +61,9 @@ fn run() -> Result<(), Error> {
     {
         let mut cursor = std::io::Cursor::new(bytes);
 
-        let version1 = Version::read(&mut cursor).unwrap();
-        let version2 = Version::read(&mut cursor).unwrap();
-        let version3 = Version::read(&mut cursor).unwrap();
+        let version1 = Version::read(&mut cursor)?;
+        let version2 = Version::read(&mut cursor)?;
+        let version3 = Version::read(&mut cursor)?;
         println!("version1: {version1}");
         println!("version2: {version2}");
         println!("version3: {version3}");
