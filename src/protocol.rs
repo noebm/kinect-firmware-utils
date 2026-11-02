@@ -105,15 +105,7 @@ pub fn send(
     }
     let result = internal::receive_status(device)?;
 
-    if result.tag != tag {
-        error!("TAG MISMATCH EXPECTED {} -  ACTUAL {}", tag, result.tag);
-        return Err(Error::Tag);
-    }
-
-    if !result.success {
-        error!("STATUSCODE NONZERO");
-        return Err(Error::Result);
-    }
+    result.check(tag)?;
 
     Ok(())
 }
@@ -143,15 +135,7 @@ pub fn receive(
         return Err(Error::Payload);
     }
 
-    if result.tag != tag {
-        error!("TAG MISMATCH EXPECTED {} -  ACTUAL {}", tag, result.tag);
-        return Err(Error::Tag);
-    }
-
-    if !result.success {
-        error!("STATUSCODE NONZERO");
-        return Err(Error::Result);
-    }
+    result.check(tag)?;
 
     Ok(response)
 }

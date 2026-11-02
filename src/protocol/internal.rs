@@ -40,6 +40,22 @@ pub fn receive_status(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Resul
     response.try_into()
 }
 
+impl Status {
+    pub fn check(self, tag: u32) -> Result<(), Error> {
+        if self.tag != tag {
+            error!("TAG MISMATCH EXPECTED {} - ACTUAL {}", tag, self.tag);
+            return Err(Error::Tag);
+        }
+
+        if !self.success {
+            error!("STATUSCODE NONZERO");
+            return Err(Error::Result);
+        }
+
+        Ok(())
+    }
+}
+
 impl TryFrom<Response> for Status {
     type Error = Error;
     fn try_from(value: Response) -> Result<Self, Self::Error> {
