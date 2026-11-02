@@ -4,24 +4,17 @@ use super::{
 use binrw::BinRead;
 use log::*;
 
-pub fn send_command(
-    device: &rusb::DeviceHandle<rusb::GlobalContext>,
-    cmd: &Command,
-) -> Result<(), Error> {
-    info!("SENDING {:08x?}", cmd);
-    send(device, cmd.as_slice())
-}
-
 #[derive(Debug)]
-pub struct Command {
+pub(super) struct Command {
     data: [u8; 24],
     len: usize,
 }
 
 impl Command {
-    pub fn firmware(command: u32, tag: u32, address: u32, size: u32) -> Self {
+    pub(super) fn firmware(command: u32, tag: u32, address: u32, size: u32) -> Self {
         let words = [0x06022009, tag, size, command, address, 0];
         let mut data = [0; 24];
+
         for (chunk, word) in data.chunks_mut(4).zip(words) {
             chunk.copy_from_slice(&word.to_le_bytes());
         }
@@ -34,14 +27,17 @@ impl Command {
     }
 }
 
-pub fn receive_status(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Status, Error> {
-    info!("RECEIVING STATUS RESULT");
-    let response = receive(device)?;
-    response.try_into()
+#[derive(BinRead)]
+#[br(little, magic = b"\x00\xe0\x6f\x0a")]
+pub(super) struct Status {
+    tag: u32,
+
+    #[br(map = |x: u32| x == 0)]
+    success: bool,
 }
 
 impl Status {
-    pub fn check(self, tag: u32) -> Result<(), Error> {
+    pub(super) fn check(self, tag: u32) -> Result<(), Error> {
         if self.tag != tag {
             error!("TAG MISMATCH EXPECTED {} - ACTUAL {}", tag, self.tag);
             return Err(Error::Tag);
@@ -58,24 +54,36 @@ impl Status {
 
 impl TryFrom<Response> for Status {
     type Error = Error;
+
     fn try_from(value: Response) -> Result<Self, Self::Error> {
         if value.get().len() != 12 {
             return Err(Error::Result);
         }
+
         Self::read(&mut std::io::Cursor::new(value.get())).map_err(|_| Error::Result)
     }
 }
 
-#[derive(BinRead)]
-#[br(little, magic = b"\x00\xe0\x6f\x0a")]
-pub struct Status {
-    pub tag: u32,
-
-    #[br(map = |x: u32| x == 0)]
-    pub success: bool,
+pub(super) fn send_command(
+    device: &rusb::DeviceHandle<rusb::GlobalContext>,
+    cmd: &Command,
+) -> Result<(), Error> {
+    info!("SENDING {:08x?}", cmd);
+    send(device, cmd.as_slice())
 }
 
-pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: &[u8]) -> Result<(), Error> {
+pub(super) fn receive_status(
+    device: &rusb::DeviceHandle<rusb::GlobalContext>,
+) -> Result<Status, Error> {
+    info!("RECEIVING STATUS RESULT");
+    let response = receive(device)?;
+    response.try_into()
+}
+
+pub(super) fn send(
+    device: &rusb::DeviceHandle<rusb::GlobalContext>,
+    packet: &[u8],
+) -> Result<(), Error> {
     let actual = device
         .write_bulk(KINECT_AUDIO_ENDPOINT_OUT, packet, TIMEOUT)
         .map_err(Error::USB)?;
@@ -90,13 +98,11 @@ pub fn send(device: &rusb::DeviceHandle<rusb::GlobalContext>, packet: &[u8]) -> 
     Ok(())
 }
 
-const PACKET_SIZE: usize = 512;
-
-pub fn packets(data: &[u8]) -> core::slice::Chunks<'_, u8> {
+pub(super) fn packets(data: &[u8]) -> core::slice::Chunks<'_, u8> {
     data.chunks(PACKET_SIZE)
 }
 
-pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Response, Error> {
+pub(super) fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Response, Error> {
     let mut packet = Response::empty();
 
     let len = device
