@@ -112,9 +112,9 @@ pub fn receive(device: &rusb::DeviceHandle<rusb::GlobalContext>) -> Result<Respo
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
+#[expect(clippy::unwrap_used, reason = "test fixtures must parse successfully")]
 mod tests {
-    use super::Command;
+    use super::{Command, Response, Status};
 
     fn le_bytes(cmd: &[u32; 6]) -> Vec<u8> {
         let cmd_buffer = cmd
@@ -175,8 +175,6 @@ mod tests {
 
         assert_eq!(le_bytes(&finished_cmd), finished.as_slice());
     }
-
-    use super::{Response, Status};
 
     #[test]
     fn parse_status() {
