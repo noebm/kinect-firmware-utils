@@ -1,5 +1,6 @@
 use log::*;
 
+mod command;
 mod internal;
 
 const PACKET_SIZE: usize = 512;
@@ -93,9 +94,11 @@ pub fn send(
     address: u32,
     data: &[u8],
 ) -> Result<(), Error> {
-    let cmd = internal::Command::firmware(command as u32, tag, address, data.len() as u32);
+    let cmd = command::Command::firmware(command as u32, tag, address, data.len() as u32);
 
-    internal::send_command(device, &cmd)?;
+    info!("SENDING {:08x?}", cmd);
+    internal::send(device, cmd.as_slice())?;
+
     for packet in internal::packets(data) {
         info!(
             "SENDING PACKET - TAG {} - ADDRESS {:x} - PACKET {}",
@@ -119,9 +122,10 @@ pub fn receive(
     address: u32,
     size: u32,
 ) -> Result<Response, Error> {
-    let cmd = internal::Command::firmware(command as u32, tag, address, size);
+    let cmd = command::Command::firmware(command as u32, tag, address, size);
 
-    internal::send_command(device, &cmd)?;
+    info!("SENDING {:08x?}", cmd);
+    internal::send(device, cmd.as_slice())?;
 
     info!("RECEIVING RESPONSE");
     let response = internal::receive(device)?;
