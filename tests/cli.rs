@@ -1,6 +1,32 @@
 use std::process::Command;
 
 #[test]
+fn tilt_rejects_invalid_arguments_before_opening_usb() {
+    for args in [
+        vec!["32"],
+        vec!["-32"],
+        vec!["NaN"],
+        vec!["1.5"],
+        vec!["0", "1"],
+        vec!["--get"],
+        vec!["--get", "1"],
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_tilt"))
+            .args(args)
+            .output()
+            .expect("run tilt");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+
+        assert_eq!(output.status.code(), Some(1), "{stderr}");
+        assert!(
+            stderr.contains("Usage: tilt [<degrees (-31..31)>]"),
+            "{stderr}"
+        );
+        assert!(!stderr.contains("panicked"), "{stderr}");
+    }
+}
+
+#[test]
 fn invalid_firmware_exits_with_readable_errors() {
     let path = std::env::temp_dir().join(format!("kinect-invalid-firmware-{}", std::process::id()));
     let check = |message: &str| {

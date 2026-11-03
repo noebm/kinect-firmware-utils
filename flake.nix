@@ -63,6 +63,12 @@
               // {
                 meta.description = "Query Kinect audio firmware status";
               };
+            tilt = (flake-utils.lib.mkApp {
+              name = "tilt";
+              drv = self.packages.${system}.kinect-firmware;
+            }) // {
+              meta.description = "Set Kinect tilt in degrees";
+            };
             default = kinect-firmware-utils;
           };
 

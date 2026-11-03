@@ -4,6 +4,32 @@ Implementation based on [kinect-audio-setup](https://git.ao2.it/kinect-audio-set
 
 # Notes
 
+## Tilt control
+
+After uploading audio firmware, set the tilt of a Kinect for Windows / model
+1473 in whole degrees from -31 to 31:
+
+```sh
+cargo run --bin tilt -- -10
+```
+
+Read the current angle in whole degrees:
+
+```sh
+cargo run --bin tilt
+```
+
+The library exports `get_motion_state(device, tag)`, returning a `MotionState`
+with raw signed accelerometer X/Y/Z readings and the current tilt in whole
+degrees. Accelerometer units are unspecified. The executable prints only tilt.
+
+The command requires USB access to the running audio device (`045e:02c3`).
+It returns after the device acknowledges the command; movement may still be
+in progress. Older model 1414 motor devices are not supported by this utility.
+The library also exports `set_tilt_degrees(device, tag, tilt)`, accepting an angle validated by
+`Tilt::new(degrees)`.
+The protocol follows [libfreenect's audio motor control](https://github.com/OpenKinect/libfreenect/blob/master/src/tilt.c).
+
 ## Firmware versions
 
 - 01.02.390.00:
