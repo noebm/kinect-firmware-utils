@@ -48,28 +48,29 @@
             default = kinect-firmware;
           };
           apps = rec {
-            kinect-firmware-utils =
+            kinect-audio-firmware-upload =
               (flake-utils.lib.mkApp {
+                name = "kinect-audio-firmware-upload";
                 drv = self.packages.${system}.kinect-firmware;
               })
               // {
                 meta.description = "Upload Kinect audio firmware";
               };
-            firmware-status =
+            kinect-audio-firmware-status =
               (flake-utils.lib.mkApp {
-                name = "firmware-status";
+                name = "kinect-audio-firmware-status";
                 drv = self.packages.${system}.kinect-firmware;
               })
               // {
                 meta.description = "Query Kinect audio firmware status";
               };
-            tilt = (flake-utils.lib.mkApp {
-              name = "tilt";
+            kinect-tilt = (flake-utils.lib.mkApp {
+              name = "kinect-tilt";
               drv = self.packages.${system}.kinect-firmware;
             }) // {
-              meta.description = "Set Kinect tilt in degrees";
+              meta.description = "Read or set Kinect tilt in degrees";
             };
-            default = kinect-firmware-utils;
+            default = kinect-audio-firmware-upload;
           };
 
           checks = nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {

@@ -14,7 +14,7 @@ stdenv.mkDerivation rec {
   patchPhase = ''
     substitute ${RULES_IN} ${RULES} \
       --subst-var-by SYSTEMD_CAT_PATH ${systemd}/bin/systemd-cat \
-      --subst-var-by LOADER_PATH ${kinect-firmware-utils}/bin/kinect-firmware-utils \
+      --subst-var-by LOADER_PATH ${kinect-firmware-utils}/bin/kinect-audio-firmware-upload \
       --subst-var-by FIRMWARE_PATH ${kinect-firmware-blob}/share/kinect-audio.fw
   '';
 

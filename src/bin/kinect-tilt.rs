@@ -4,7 +4,7 @@ use kinect_firmware_utils::{
 };
 
 fn main() -> anyhow::Result<()> {
-    const USAGE: &str = "Usage: tilt [<degrees (-31..31)>]";
+    const USAGE: &str = "Usage: kinect-tilt [<degrees (-31..31)>]";
     let mut args = std::env::args_os().skip(1);
     let argument = args.next();
     if args.next().is_some() {

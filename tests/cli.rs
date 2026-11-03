@@ -11,15 +11,15 @@ fn tilt_rejects_invalid_arguments_before_opening_usb() {
         vec!["--get"],
         vec!["--get", "1"],
     ] {
-        let output = Command::new(env!("CARGO_BIN_EXE_tilt"))
+        let output = Command::new(env!("CARGO_BIN_EXE_kinect-tilt"))
             .args(args)
             .output()
-            .expect("run tilt");
+            .expect("run kinect-tilt");
         let stderr = String::from_utf8_lossy(&output.stderr);
 
         assert_eq!(output.status.code(), Some(1), "{stderr}");
         assert!(
-            stderr.contains("Usage: tilt [<degrees (-31..31)>]"),
+            stderr.contains("Usage: kinect-tilt [<degrees (-31..31)>]"),
             "{stderr}"
         );
         assert!(!stderr.contains("panicked"), "{stderr}");
@@ -30,7 +30,7 @@ fn tilt_rejects_invalid_arguments_before_opening_usb() {
 fn invalid_firmware_exits_with_readable_errors() {
     let path = std::env::temp_dir().join(format!("kinect-invalid-firmware-{}", std::process::id()));
     let check = |message: &str| {
-        let output = Command::new(env!("CARGO_BIN_EXE_kinect-firmware-utils"))
+        let output = Command::new(env!("CARGO_BIN_EXE_kinect-audio-firmware-upload"))
             .arg(&path)
             .output()
             .expect("run uploader");

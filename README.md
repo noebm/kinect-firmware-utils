@@ -2,6 +2,18 @@
 
 Implementation based on [kinect-audio-setup](https://git.ao2.it/kinect-audio-setup.git/) and [libfreenect](https://github.com/OpenKinect/libfreenect).
 
+The package provides three commands:
+
+- `kinect-audio-firmware-upload [<firmware.bin>]`: upload Kinect audio firmware.
+- `kinect-audio-firmware-status`: query audio firmware status.
+- `kinect-tilt [<degrees>]`: read or set the tilt angle.
+
+Run them with `cargo run --bin <command> -- <arguments>` or
+`nix run .#<command> -- <arguments>`. The default command is
+`kinect-audio-firmware-upload`.
+
+See [CHANGELOG.md](CHANGELOG.md) for changes and command migrations.
+
 # Notes
 
 ## Firmware upload logs
@@ -23,13 +35,13 @@ After uploading audio firmware, set the tilt of a Kinect for Windows / model
 1473 in whole degrees from -31 to 31:
 
 ```sh
-cargo run --bin tilt -- -10
+cargo run --bin kinect-tilt -- -10
 ```
 
 Read the current angle in whole degrees:
 
 ```sh
-cargo run --bin tilt
+cargo run --bin kinect-tilt
 ```
 
 The library exports `get_motion_state(device, tag)`, returning a `MotionState`
