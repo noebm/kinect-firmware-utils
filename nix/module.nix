@@ -20,7 +20,7 @@ in
 
       gain = lib.mkOption {
         type = lib.types.addCheck lib.types.number (gain: gain >= 0);
-        default = 0.25;
+        default = 1.0;
         example = 0.5;
         description = "Linear gain applied to each of the four microphone channels.";
       };
