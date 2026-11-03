@@ -4,6 +4,19 @@ Implementation based on [kinect-audio-setup](https://git.ao2.it/kinect-audio-set
 
 # Notes
 
+## Firmware upload logs
+
+The udev rule sends firmware uploader output to the system journal, including
+start and successful completion messages at info priority and errors at error
+priority. Set `RUST_LOG=debug` when running the uploader manually to include
+firmware header and USB protocol details.
+Completion means the device acknowledged the firmware execution command.
+View uploads and errors from the current boot:
+
+```sh
+journalctl -b -t kinect-audio-firmware-upload
+```
+
 ## Tilt control
 
 After uploading audio firmware, set the tilt of a Kinect for Windows / model

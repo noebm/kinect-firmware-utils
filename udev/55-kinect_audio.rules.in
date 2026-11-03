@@ -1,2 +1,2 @@
 # Rule to load the Kinect UAC firmware on the "generic" usb device
-ACTION=="add", SUBSYSTEMS=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02be", RUN+="@LOADER_PATH@ @FIRMWARE_PATH@"
+ACTION=="add", SUBSYSTEMS=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02be", RUN+="@SYSTEMD_CAT_PATH@ --identifier=kinect-audio-firmware-upload --priority=info --stderr-priority=err --level-prefix=true @LOADER_PATH@ @FIRMWARE_PATH@"
