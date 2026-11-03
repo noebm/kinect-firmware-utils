@@ -1,8 +1,10 @@
+use anyhow::{bail, Context};
+use kinect_firmware_utils::Error as ProtocolError;
 use kinect_firmware_utils::*;
 
 fn setup_device(
     device: rusb::DeviceHandle<rusb::GlobalContext>,
-) -> Result<rusb::DeviceHandle<rusb::GlobalContext>, Error> {
+) -> anyhow::Result<rusb::DeviceHandle<rusb::GlobalContext>> {
     if device.active_configuration()? != KINECT_AUDIO_CONFIGURATION {
         device.set_active_configuration(KINECT_AUDIO_CONFIGURATION)?;
     }
@@ -12,39 +14,29 @@ fn setup_device(
 
     let actual = device.active_configuration()?;
     if actual != KINECT_AUDIO_CONFIGURATION {
-        return Err(Error::Configuration { actual });
+        return Err(ProtocolError::Configuration { actual }.into());
     }
 
     Ok(device)
 }
 
-fn main() -> std::process::ExitCode {
-    match run() {
-        Ok(()) => std::process::ExitCode::SUCCESS,
-        Err(error) => {
-            eprintln!("Error: {error}");
-            std::process::ExitCode::FAILURE
-        }
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> anyhow::Result<()> {
     let filename = std::env::args_os()
         .nth(1)
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| std::path::PathBuf::from("firmware.bin"));
 
-    let firmware = std::fs::read(&filename).map_err(|source| Error::FirmwareRead {
-        path: filename,
-        source,
-    })?;
-    let firmware_header = Header::from_slice(&firmware)?;
+    let firmware = std::fs::read(&filename)
+        .with_context(|| format!("could not read firmware '{}'", filename.display()))?;
+    let firmware_header =
+        Header::from_slice(&firmware).context("could not parse firmware header")?;
 
     if firmware.len() != firmware_header.size as usize {
-        return Err(Error::FirmwareSize {
-            expected: firmware_header.size,
-            actual: firmware.len(),
-        });
+        bail!(
+            "firmware size mismatch: header declares {} bytes, file contains {}",
+            firmware_header.size,
+            firmware.len(),
+        );
     }
 
     println!("FIRMWARE HEADER {}", firmware_header);
@@ -67,5 +59,7 @@ fn run() -> Result<(), Error> {
 
     seq += 1;
 
-    execute(&device, seq, firmware_header.entry_point)
+    execute(&device, seq, firmware_header.entry_point)?;
+
+    Ok(())
 }

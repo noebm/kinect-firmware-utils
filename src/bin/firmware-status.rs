@@ -1,16 +1,6 @@
 use kinect_firmware_utils::*;
 
-fn main() -> std::process::ExitCode {
-    match run() {
-        Ok(()) => std::process::ExitCode::SUCCESS,
-        Err(error) => {
-            eprintln!("Error: {error}");
-            std::process::ExitCode::FAILURE
-        }
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> anyhow::Result<()> {
     env_logger::init();
 
     let device = open_audio_device(0x02c3)?;

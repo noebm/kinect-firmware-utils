@@ -20,16 +20,6 @@ pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("could not read firmware '{}': {source}", path.display())]
-    FirmwareRead {
-        path: std::path::PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("could not parse firmware header: {0}")]
-    FirmwareHeader(#[from] binrw::Error),
-    #[error("firmware size mismatch: header declares {expected} bytes, file contains {actual}")]
-    FirmwareSize { expected: u32, actual: usize },
     #[allow(clippy::upper_case_acronyms)]
     #[error("USB operation failed: {0}")]
     USB(#[from] rusb::Error),
