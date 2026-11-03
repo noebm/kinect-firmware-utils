@@ -1,5 +1,8 @@
 # kinect-firmware-utils
 
+Utilities for interacting with the Kinect audio interface, including uploading
+the firmware required to use the Kinect as a microphone.
+
 Implementation based on [kinect-audio-setup](https://git.ao2.it/kinect-audio-setup.git/) and [libfreenect](https://github.com/OpenKinect/libfreenect).
 
 The package provides three commands:
@@ -8,11 +11,15 @@ The package provides three commands:
 - `kinect-audio-firmware-status`: query audio firmware status.
 - `kinect-tilt [<degrees>]`: read or set the tilt angle.
 
-Run them with `cargo run --bin <command> -- <arguments>` or
-`nix run .#<command> -- <arguments>`. The default command is
-`kinect-audio-firmware-upload`.
+## Device support
 
-See [CHANGELOG.md](CHANGELOG.md) for changes and command migrations.
+The utilities target Kinect for Windows / model 1473 audio devices with
+Microsoft USB vendor ID `045e`:
+
+- `045e:02be`: audio device before firmware upload.
+- `045e:02c3`: running audio device, used for firmware status and tilt control.
+
+The commands require USB access to the corresponding device.
 
 # Notes
 
@@ -28,32 +35,6 @@ View uploads and errors from the current boot:
 ```sh
 journalctl -b -t kinect-audio-firmware-upload
 ```
-
-## Tilt control
-
-After uploading audio firmware, set the tilt of a Kinect for Windows / model
-1473 in whole degrees from -31 to 31:
-
-```sh
-cargo run --bin kinect-tilt -- -10
-```
-
-Read the current angle in whole degrees:
-
-```sh
-cargo run --bin kinect-tilt
-```
-
-The library exports `get_motion_state(device, tag)`, returning a `MotionState`
-with raw signed accelerometer X/Y/Z readings and the current tilt in whole
-degrees. Accelerometer units are unspecified. The executable prints only tilt.
-
-The command requires USB access to the running audio device (`045e:02c3`).
-It returns after the device acknowledges the command; movement may still be
-in progress. Older model 1414 motor devices are not supported by this utility.
-The library also exports `set_tilt_degrees(device, tag, tilt)`, accepting an angle validated by
-`Tilt::new(degrees)`.
-The protocol follows [libfreenect's audio motor control](https://github.com/OpenKinect/libfreenect/blob/master/src/tilt.c).
 
 ## Firmware versions
 
@@ -101,6 +82,3 @@ four Kinect channels:
   };
 }
 ```
-
-After switching the system configuration, restart PipeWire or log out and back
-in. Select `Kinect Microphone Array Mono` as the input source in applications.
