@@ -73,8 +73,6 @@ in
                 matches = [
                   {
                     "node.name" = "~alsa_input.usb-Microsoft_Kinect_for_Windows_USB_Audio_.*-02.analog-surround-40";
-                    "device.vendor.id" = "0x045e";
-                    "device.product.id" = "0x02c3";
                   }
                 ];
                 actions.update-props = {
