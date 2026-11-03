@@ -2,6 +2,8 @@ use anyhow::{bail, Context};
 use kinect_firmware_utils::Error as ProtocolError;
 use kinect_firmware_utils::*;
 
+mod logging;
+
 fn setup_device(
     device: rusb::DeviceHandle<rusb::GlobalContext>,
 ) -> anyhow::Result<rusb::DeviceHandle<rusb::GlobalContext>> {
@@ -21,10 +23,17 @@ fn setup_device(
 }
 
 fn main() -> anyhow::Result<()> {
+    logging::init();
+
     let filename = std::env::args_os()
         .nth(1)
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| std::path::PathBuf::from("firmware.bin"));
+
+    log::info!(
+        "Starting Kinect audio firmware upload from '{}'",
+        filename.display()
+    );
 
     let firmware = std::fs::read(&filename)
         .with_context(|| format!("could not read firmware '{}'", filename.display()))?;
@@ -39,7 +48,7 @@ fn main() -> anyhow::Result<()> {
         );
     }
 
-    println!("FIRMWARE HEADER {}", firmware_header);
+    log::debug!("FIRMWARE HEADER {}", firmware_header);
 
     let device = open_audio_device(PRODUCT_K4W_AUDIO_ORIGINAL)?;
     let device = setup_device(device)?;
@@ -60,6 +69,8 @@ fn main() -> anyhow::Result<()> {
     seq += 1;
 
     execute(&device, seq, firmware_header.entry_point)?;
+
+    log::info!("Kinect audio firmware upload completed successfully");
 
     Ok(())
 }

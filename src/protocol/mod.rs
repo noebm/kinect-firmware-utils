@@ -63,11 +63,11 @@ fn send(
     tag: u32,
     data: &[u8],
 ) -> Result<(), Error> {
-    info!("SENDING {:08x?}", cmd);
+    debug!("SENDING {:08x?}", cmd);
     internal::send(device, cmd.as_slice())?;
 
     for packet in internal::packets(data) {
-        info!("SENDING PACKET - TAG {} - PACKET {}", tag, packet.len());
+        debug!("SENDING PACKET - TAG {} - PACKET {}", tag, packet.len());
         internal::send(device, packet)?;
     }
     let result = internal::receive_status(device)?;
@@ -83,10 +83,10 @@ fn receive(
     tag: u32,
     size: usize,
 ) -> Result<internal::Packet, Error> {
-    info!("SENDING {:08x?}", cmd);
+    debug!("SENDING {:08x?}", cmd);
     internal::send(device, cmd.as_slice())?;
 
-    info!("RECEIVING RESPONSE");
+    debug!("RECEIVING RESPONSE");
     let packet = internal::receive(device)?;
 
     let result = internal::receive_status(device)?;

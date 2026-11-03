@@ -81,7 +81,7 @@ impl TryFrom<Packet> for Status {
 pub(super) fn receive_status(
     device: &rusb::DeviceHandle<rusb::GlobalContext>,
 ) -> Result<Status, Error> {
-    info!("RECEIVING STATUS RESULT");
+    debug!("RECEIVING STATUS RESULT");
     let response = receive(device)?;
     response.try_into()
 }
