@@ -3,8 +3,11 @@ use log::*;
 mod command;
 mod firmware;
 mod internal;
+mod motion;
 
+use crate::Tilt;
 pub use firmware::{FirmwareStatus, Version};
+pub use motion::MotionState;
 
 const PACKET_SIZE: usize = 512;
 
@@ -138,3 +141,31 @@ pub fn execute(
     send(device, packet, tag, &[])
 }
 
+/// Reads accelerometer and motor state from a Kinect for Windows / model 1473.
+///
+/// Requires loaded audio firmware and a claimed audio command interface.
+/// The caller must serialize access with other audio protocol commands.
+/// The reported position can change while the motor is moving.
+pub fn get_motion_state(
+    device: &rusb::DeviceHandle<rusb::GlobalContext>,
+    tag: u32,
+) -> Result<MotionState, Error> {
+    let packet = command::motion_state(tag);
+    let response = receive(device, packet, tag, command::MOTION_STATE_SIZE)?;
+    MotionState::parse(response.as_slice())
+}
+
+/// Sets the tilt of a Kinect for Windows / model 1473 using its audio device.
+///
+/// Requires loaded audio firmware and a claimed audio command interface.
+/// Angles are whole degrees in -31..=31. The caller supplies a command tag and
+/// must serialize access to the device with other audio protocol commands.
+/// This returns after acknowledgement, before the motor necessarily stops.
+pub fn set_tilt_degrees(
+    device: &rusb::DeviceHandle<rusb::GlobalContext>,
+    tag: u32,
+    tilt: Tilt,
+) -> Result<(), Error> {
+    let packet = command::tilt(tag, tilt);
+    send(device, packet, tag, &[])
+}

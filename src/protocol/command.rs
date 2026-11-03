@@ -11,6 +11,7 @@ macro_rules! command {
 }
 
 pub(super) const FIRMWARE_STATUS_SIZE: usize = 0x60;
+pub(super) const MOTION_STATE_SIZE: usize = 0x68;
 
 // Status ignores the address; retain the reference query value.
 command!(firmware_status(tag: u32) => [
@@ -25,9 +26,19 @@ command!(execute(tag: u32, entry_point: u32) => [
     COMMAND_MAGIC, tag, 0, 0x0004, entry_point, 0,
 ]);
 
+// Audio motor commands omit the trailing firmware word.
+command!(tilt(tag: u32, tilt: super::Tilt) => [
+    COMMAND_MAGIC, tag, 0, 0x803b, tilt.degrees() as u32,
+]);
+
+command!(motion_state(tag: u32) => [
+    COMMAND_MAGIC, tag, MOTION_STATE_SIZE as u32, 0x8032,
+]);
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Tilt;
 
     fn le_bytes(cmd: &[u32; 6]) -> Vec<u8> {
         let cmd_buffer = cmd
@@ -36,6 +47,27 @@ mod tests {
             .collect::<Vec<[u8; 4]>>()
             .concat();
         cmd_buffer
+    }
+
+    #[test]
+    fn generate_motion_state_command() {
+        assert_eq!(
+            motion_state(0x12345678).as_slice(),
+            [0x09, 0x20, 0x02, 0x06, 0x78, 0x56, 0x34, 0x12, 0x68, 0, 0, 0, 0x32, 0x80, 0, 0,]
+        );
+    }
+
+    #[test]
+    fn generate_motor_command() {
+        for degrees in [-31i32, 0, 31] {
+            let command = tilt(0x12345678, Tilt::new(degrees).expect("valid angle"));
+            let mut expected = vec![
+                0x09, 0x20, 0x02, 0x06, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x3b, 0x80, 0, 0,
+            ];
+            expected.extend_from_slice(&degrees.to_le_bytes());
+
+            assert_eq!(command.as_slice(), expected);
+        }
     }
 
     #[test]
