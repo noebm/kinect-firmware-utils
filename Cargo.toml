@@ -4,13 +4,19 @@ version = "0.2.0"
 edition = "2021"
 default-run = "kinect-audio-firmware-upload"
 
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+
 [lints.clippy]
 unwrap_used = "warn"
 
 [dependencies]
 anyhow = "1.0"
 binrw = "0.15"
-env_logger = "0.11"
+env_logger = { version = "0.11", default-features = false }
 log = "0.4"
 rusb = "0.9"
 thiserror = "2.0"
