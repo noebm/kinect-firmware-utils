@@ -1,12 +1,33 @@
 use super::internal::Packet;
 
-pub(super) fn firmware(command: u32, tag: u32, address: u32, size: u32) -> Packet {
-    Packet::from_command(&[0x06022009, tag, size, command, address, 0])
+const COMMAND_MAGIC: u32 = 0x0602_2009;
+
+macro_rules! command {
+    ($name:ident($($arg:ident: $ty:ty),* $(,)?) => [$($word:expr),* $(,)?]) => {
+        pub(super) fn $name($($arg: $ty),*) -> Packet {
+            Packet::from_command(&[$($word),*])
+        }
+    };
 }
+
+pub(super) const FIRMWARE_STATUS_SIZE: usize = 0x60;
+
+// Status ignores the address; retain the reference query value.
+command!(firmware_status(tag: u32) => [
+    COMMAND_MAGIC, tag, FIRMWARE_STATUS_SIZE as u32, 0x0000, 0x15, 0,
+]);
+
+command!(page(tag: u32, address: u32, data_len: usize) => [
+    COMMAND_MAGIC, tag, data_len as u32, 0x0003, address, 0,
+]);
+
+command!(execute(tag: u32, entry_point: u32) => [
+    COMMAND_MAGIC, tag, 0, 0x0004, entry_point, 0,
+]);
 
 #[cfg(test)]
 mod tests {
-    use super::firmware;
+    use super::*;
 
     fn le_bytes(cmd: &[u32; 6]) -> Vec<u8> {
         let cmd_buffer = cmd
@@ -28,7 +49,7 @@ mod tests {
             0x00000015u32, // address
             0x00000000u32, // unk
         ];
-        let status = firmware(0, seq, 0x15, 0x60);
+        let status = firmware_status(seq);
 
         assert_eq!(le_bytes(&status_cmd), status.as_slice());
     }
@@ -46,7 +67,7 @@ mod tests {
             address,           // address
             0x00000000u32,     // unk
         ];
-        let page = firmware(3, seq, address, page_len as u32);
+        let page = page(seq, address, page_len);
 
         assert_eq!(le_bytes(&page_cmd), page.as_slice());
     }
@@ -63,7 +84,7 @@ mod tests {
             entry_point,    // address
             0x0000_0000u32, // unk
         ];
-        let finished = firmware(4, seq, entry_point, 0);
+        let finished = execute(seq, entry_point);
 
         assert_eq!(le_bytes(&finished_cmd), finished.as_slice());
     }

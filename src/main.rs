@@ -54,7 +54,7 @@ fn run() -> Result<(), Error> {
 
     let mut seq = 1u32;
 
-    let _firmware_status = receive(&device, Command::Status, seq, 0x15, 0x60)?;
+    let _firmware_status = get_firmware_status(&device, seq)?;
 
     const PAGESIZE: usize = 0x4000;
     let pages = firmware.chunks(PAGESIZE);
@@ -62,16 +62,10 @@ fn run() -> Result<(), Error> {
 
     for (address, page) in addresses.zip(pages) {
         seq += 1;
-        send(&device, Command::Page, seq, address, page)?;
+        write_page(&device, seq, address, page)?;
     }
 
     seq += 1;
 
-    send(
-        &device,
-        Command::Execute,
-        seq,
-        firmware_header.entry_point,
-        &[],
-    )
+    execute(&device, seq, firmware_header.entry_point)
 }

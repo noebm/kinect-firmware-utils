@@ -1,7 +1,10 @@
 use log::*;
 
 mod command;
+mod firmware;
 mod internal;
+
+pub use firmware::{FirmwareStatus, Version};
 
 const PACKET_SIZE: usize = 512;
 
@@ -14,17 +17,6 @@ pub const KINECT_AUDIO_ENDPOINT_OUT: u8 = 0x01;
 /// Timeout for each USB transfer, including the device's command acknowledgement.
 /// A zero duration would allow a stalled device to block indefinitely.
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
-
-/// Data packet for receiving data
-pub struct Response {
-    packet: internal::Packet,
-}
-
-impl Response {
-    pub fn get(&self) -> &[u8] {
-        self.packet.as_slice()
-    }
-}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -72,32 +64,17 @@ pub fn open_audio_device(product: u16) -> Result<rusb::DeviceHandle<rusb::Global
     Err(Error::DeviceNotFound { product })
 }
 
-#[repr(u32)]
-pub enum Command {
-    Status = 0,
-    Page = 3,
-    Execute = 4,
-}
-
-pub fn send(
+fn send(
     device: &rusb::DeviceHandle<rusb::GlobalContext>,
-    command: Command,
+    cmd: internal::Packet,
     tag: u32,
-    address: u32,
     data: &[u8],
 ) -> Result<(), Error> {
-    let cmd = command::firmware(command as u32, tag, address, data.len() as u32);
-
     info!("SENDING {:08x?}", cmd);
     internal::send(device, cmd.as_slice())?;
 
     for packet in internal::packets(data) {
-        info!(
-            "SENDING PACKET - TAG {} - ADDRESS {:x} - PACKET {}",
-            tag,
-            address,
-            packet.len()
-        );
+        info!("SENDING PACKET - TAG {} - PACKET {}", tag, packet.len());
         internal::send(device, packet)?;
     }
     let result = internal::receive_status(device)?;
@@ -107,15 +84,12 @@ pub fn send(
     Ok(())
 }
 
-pub fn receive(
+fn receive(
     device: &rusb::DeviceHandle<rusb::GlobalContext>,
-    command: Command,
+    cmd: internal::Packet,
     tag: u32,
-    address: u32,
-    size: u32,
-) -> Result<Response, Error> {
-    let cmd = command::firmware(command as u32, tag, address, size);
-
+    size: usize,
+) -> Result<internal::Packet, Error> {
     info!("SENDING {:08x?}", cmd);
     internal::send(device, cmd.as_slice())?;
 
@@ -124,7 +98,7 @@ pub fn receive(
 
     let result = internal::receive_status(device)?;
 
-    if packet.as_slice().len() != size as usize {
+    if packet.as_slice().len() != size {
         error!(
             "PAYLOAD SIZE MISMATCH EXPECTED {} - ACTUAL {}",
             size,
@@ -135,5 +109,42 @@ pub fn receive(
 
     result.check(tag)?;
 
-    Ok(Response { packet })
+    Ok(packet)
 }
+
+/// Reads firmware status from a claimed audio command interface.
+/// The caller supplies a tag and must serialize access with other commands.
+pub fn get_firmware_status(
+    device: &rusb::DeviceHandle<rusb::GlobalContext>,
+    tag: u32,
+) -> Result<FirmwareStatus, Error> {
+    let packet = command::firmware_status(tag);
+    let response = receive(device, packet, tag, command::FIRMWARE_STATUS_SIZE)?;
+    FirmwareStatus::parse(response.as_slice())
+}
+
+/// Writes a firmware page to an absolute destination address in device memory.
+/// Requires a claimed audio command interface in the firmware upload state.
+/// The caller supplies a tag and must serialize access with other commands.
+pub fn write_page(
+    device: &rusb::DeviceHandle<rusb::GlobalContext>,
+    tag: u32,
+    address: u32,
+    data: &[u8],
+) -> Result<(), Error> {
+    let packet = command::page(tag, address, data.len());
+    send(device, packet, tag, data)
+}
+
+/// Starts uploaded firmware at its absolute entry point address.
+/// Requires a claimed audio command interface and a completed firmware upload.
+/// The caller supplies a tag and must serialize access with other commands.
+pub fn execute(
+    device: &rusb::DeviceHandle<rusb::GlobalContext>,
+    tag: u32,
+    entry_point: u32,
+) -> Result<(), Error> {
+    let packet = command::execute(tag, entry_point);
+    send(device, packet, tag, &[])
+}
+
